@@ -1,0 +1,159 @@
+<template>
+	<view class="sm-field">
+		<view v-if="label.length > 0" class="sm-field__head">
+			<text class="sm-field__label">{{ label }}</text>
+			<text v-if="hint.length > 0" class="sm-field__hint">{{ hint }}</text>
+		</view>
+		<view class="sm-field__box" :class="boxClass">
+			<textarea v-if="multiline" class="sm-field__area" :value="modelValue" :placeholder="placeholder" :maxlength="maxlength" placeholder-class="sm-field__placeholder" :auto-height="true" @input="onInput"></textarea>
+			<input v-else class="sm-field__input" :value="modelValue" :placeholder="placeholder" :maxlength="maxlength" :password="password" placeholder-class="sm-field__placeholder" @input="onInput" />
+			<view v-if="password" class="sm-field__eye" @click="onToggleEye">
+				<sm-icon :name="visible ? 'eye' : 'eye-off'" variant="muted" size="sm"></sm-icon>
+			</view>
+		</view>
+		<view v-if="countable || error.length > 0" class="sm-field__foot">
+			<text v-if="error.length > 0" class="sm-field__error">{{ error }}</text>
+			<text v-else class="sm-field__count">{{ modelValue.length }}/{{ maxlength }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		modelValue?: string
+		label?: string
+		hint?: string
+		placeholder?: string
+		multiline?: boolean
+		password?: boolean
+		maxlength?: number
+		countable?: boolean
+		error?: string
+	}>(), {
+		modelValue: '',
+		label: '',
+		hint: '',
+		placeholder: '',
+		multiline: false,
+		password: false,
+		maxlength: 200,
+		countable: false,
+		error: ''
+	})
+
+	const emit = defineEmits(['update:modelValue', 'change'])
+	const visible = ref(false)
+
+	const boxClass = computed((): string => {
+		if (props.error.length > 0) return 'sm-field__box--error'
+		if (props.multiline) return 'sm-field__box--area'
+		return 'sm-field__box--single'
+	})
+
+	const onInput = (event: UniInputEvent): void => {
+		emit('update:modelValue', event.detail.value)
+		emit('change', event.detail.value)
+	}
+
+	const onToggleEye = (): void => {
+		visible.value = !visible.value
+	}
+</script>
+
+<style>
+	.sm-field {
+		flex-direction: column;
+	}
+
+	.sm-field__head {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--sm-space-2);
+	}
+
+	.sm-field__label {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.sm-field__hint {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.sm-field__box {
+		flex-direction: row;
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-width: var(--sm-border-hairline);
+		border-style: solid;
+		border-color: var(--sm-color-border-default);
+	}
+
+	.sm-field__box--single {
+		height: var(--sm-size-control-lg);
+		border-radius: var(--sm-radius-md);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+	}
+
+	.sm-field__box--area {
+		border-radius: var(--sm-radius-md);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		align-items: flex-start;
+	}
+
+	.sm-field__box--error {
+		border-color: var(--sm-color-action-danger);
+	}
+
+	.sm-field__input {
+		flex: 1;
+		height: var(--sm-size-control-lg);
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+	}
+
+	.sm-field__area {
+		width: 100%;
+		min-height: var(--sm-space-16);
+		font-size: var(--sm-fs-md);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-primary);
+	}
+
+	.sm-field__placeholder {
+		color: var(--sm-color-text-muted);
+		font-size: var(--sm-fs-md);
+	}
+
+	.sm-field__eye {
+		width: var(--sm-size-control-sm);
+		height: var(--sm-size-control-sm);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sm-field__foot {
+		flex-direction: row;
+		justify-content: flex-end;
+		margin-top: var(--sm-space-1);
+	}
+
+	.sm-field__count {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.sm-field__error {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-action-danger);
+	}
+</style>

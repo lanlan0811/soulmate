@@ -1,0 +1,196 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="说什么" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view class="card">
+					<text class="card__title">想说点什么</text>
+					<text class="card__text">用着别扭、缺了什么，或者只是想夸一句。反馈只存在本机。</text>
+
+					<view class="kinds">
+						<sm-segment :items="kindItems" v-model="kind"></sm-segment>
+					</view>
+
+					<view class="field">
+						<sm-field v-model="content" label="内容" placeholder="写下你的想法" :maxlength="500" :multiline="true" :countable="true" :error="contentError"></sm-field>
+					</view>
+
+					<view class="field">
+						<sm-field v-model="contact" label="联系方式" hint="可选" placeholder="邮箱或其它能找到你的方式" :maxlength="80"></sm-field>
+					</view>
+
+					<sm-button label="提交" block size="lg" @tap="submit"></sm-button>
+				</view>
+
+				<view class="card">
+					<text class="card__title">我提交过的</text>
+					<view v-if="feedbacks.length > 0" class="list">
+						<view v-for="item in feedbacks" :key="item.id" class="item">
+							<view class="item__head">
+								<view class="item__kind">
+									<text class="item__kind-text">{{ kindLabel(item.kind) }}</text>
+								</view>
+								<text class="item__time">{{ timeLabel(item.createdAt) }}</text>
+							</view>
+							<text class="item__content">{{ item.content }}</text>
+							<text v-if="item.contact.length > 0" class="item__contact">{{ item.contact }}</text>
+						</view>
+					</view>
+					<sm-empty v-else icon="edit" title="还没有提交过" desc="你的每一条反馈都会留在这里"></sm-empty>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state, addFeedback, persist } from '../../store/app.uts'
+	import { formatFullTime } from '../../utils/format.uts'
+
+	const kind = ref('idea')
+	const content = ref('')
+	const contact = ref('')
+	const contentError = ref('')
+
+	const kindItems = [
+		{ value: 'idea', label: '建议' },
+		{ value: 'bug', label: '问题' },
+		{ value: 'other', label: '其它' }
+	]
+
+	const feedbacks = computed(() => state.feedbacks)
+
+	const kindLabel = (value: string): string => {
+		if (value == 'bug') return '问题'
+		if (value == 'other') return '其它'
+		return '建议'
+	}
+
+	const timeLabel = (ts: number): string => formatFullTime(ts)
+
+	const submit = (): void => {
+		const text = content.value.trim()
+		if (text.length == 0) {
+			contentError.value = '先写点内容吧'
+			return
+		}
+		contentError.value = ''
+		addFeedback(kind.value, text, contact.value.trim())
+		content.value = ''
+		contact.value = ''
+		uni.showToast({ title: '已提交', position: 'bottom' })
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.card {
+		margin-top: var(--sm-space-3);
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.card__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.card__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+
+	.kinds {
+		margin-top: var(--sm-space-4);
+	}
+
+	.field {
+		margin-top: var(--sm-space-4);
+	}
+
+	.list {
+		flex-direction: column;
+		margin-top: var(--sm-space-3);
+	}
+
+	.item {
+		flex-direction: column;
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		border-radius: var(--sm-radius-md);
+		background-color: var(--sm-color-bg-sunken);
+		margin-bottom: var(--sm-space-2);
+	}
+
+	.item__head {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.item__kind {
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.item__kind-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-brand-800);
+	}
+
+	.item__time {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.item__content {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-primary);
+	}
+
+	.item__contact {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

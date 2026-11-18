@@ -1,28 +1,15 @@
-<script setup>
+<script setup lang="ts">
 	// #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
 	// #endif
 
 	onLaunch(() => {
-		console.log('App Launch')
-	})
-
-	onAppShow(() => {
-		console.log('App Show')
-	})
-
-	onAppHide(() => {
-		console.log('App Hide')
 	})
 
 	// #ifdef APP-ANDROID || APP-HARMONY
 	onLastPageBackPress(() => {
-		console.log('App LastPageBackPress')
 		if (firstBackTime == 0) {
-			uni.showToast({
-				title: '再按一次退出应用',
-				position: 'bottom',
-			})
+			uni.showToast({ title: '再按一次退出应用', position: 'bottom' })
 			firstBackTime = Date.now()
 			setTimeout(() => {
 				firstBackTime = 0
@@ -32,20 +19,33 @@
 			uni.exit()
 		}
 	})
-
-	onExit(() => {
-		console.log('App Exit')
-	})
 	// #endif
 </script>
 
 <style>
-	/*每个页面公共css */
-	.uni-row {
-		flex-direction: row;
+	@import './styles/tokens.css';
+
+	page {
+		background-color: var(--sm-color-bg-canvas);
+		color: var(--sm-color-text-primary);
+		font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+		font-size: var(--sm-fs-md);
+		line-height: var(--sm-lh-normal);
 	}
 
-	.uni-column {
+	.sm-screen {
+		flex: 1;
 		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.sm-statusbar {
+		height: var(--status-bar-height);
+		flex-shrink: 0;
+	}
+
+	.sm-safe-bottom {
+		height: var(--uni-safe-area-inset-bottom);
+		flex-shrink: 0;
 	}
 </style>

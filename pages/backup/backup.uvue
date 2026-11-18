@@ -1,0 +1,216 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="数据备份" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view class="card">
+					<text class="card__title">导出</text>
+					<text class="card__text">把当前本机数据生成为一段 JSON 文本，方便你自己保存。内容只在本机生成。</text>
+					<view class="card__actions">
+						<sm-button label="生成并复制" block icon="copy" @tap="exportData"></sm-button>
+					</view>
+					<view v-if="exported.length > 0" class="json">
+						<text class="json__text">{{ exported }}</text>
+					</view>
+				</view>
+
+				<view class="card">
+					<text class="card__title">从文本恢复</text>
+					<text class="card__text">粘贴之前导出的 JSON，校验通过后覆盖当前数据。</text>
+					<view class="restore">
+						<textarea class="restore__input" v-model="importText" placeholder="在这里粘贴备份 JSON" placeholder-class="restore__placeholder"></textarea>
+					</view>
+					<view v-if="importError.length > 0" class="error">
+						<text class="error__text">{{ importError }}</text>
+					</view>
+					<view class="card__actions">
+						<sm-button label="校验并恢复" block variant="secondary" icon="upload" @tap="importData"></sm-button>
+					</view>
+				</view>
+
+				<view class="card">
+					<view class="auto">
+						<view class="auto__body">
+							<text class="card__title">自动备份</text>
+							<text class="card__text">当前版本只在本次运行内生成，不会写额外文件。</text>
+						</view>
+						<sm-switch v-model="autoBackup" @change="onAutoBackup"></sm-switch>
+					</view>
+				</view>
+
+				<view class="card">
+					<text class="card__title">备份记录</text>
+					<sm-empty icon="folder" title="还没有备份" desc="生成一次导出后，这里会记录这一次的操作"></sm-empty>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { ref } from 'vue'
+	import { state, exportJson, restoreFromJson, setSettings } from '../../store/app.uts'
+
+	const exported = ref('')
+	const importText = ref('')
+	const importError = ref('')
+	const autoBackup = ref(false)
+
+	onLoad(() => {
+		autoBackup.value = state.settings.autoBackup
+	})
+
+	const exportData = (): void => {
+		exported.value = exportJson()
+		uni.setClipboardData({
+			data: exported.value,
+			success: () => {
+				uni.showToast({ title: '已复制到剪贴板', position: 'bottom' })
+			}
+		})
+	}
+
+	const importData = (): void => {
+		const text = importText.value.trim()
+		if (text.length == 0) {
+			importError.value = '先粘贴一段备份 JSON'
+			return
+		}
+		const ok = restoreFromJson(text)
+		if (!ok) {
+			importError.value = '这段内容不是有效的备份，当前数据未改动'
+			return
+		}
+		importError.value = ''
+		uni.showToast({ title: '已恢复', position: 'bottom' })
+	}
+
+	const onAutoBackup = (value: boolean): void => {
+		setSettings({
+			proactive: state.settings.proactive,
+			thinkingCollapsed: state.settings.thinkingCollapsed,
+			segmentBubble: state.settings.segmentBubble,
+			enterToSend: state.settings.enterToSend,
+			motion: state.settings.motion,
+			fontSize: state.settings.fontSize,
+			autoBackup: value
+		})
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.card {
+		margin-top: var(--sm-space-3);
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.card__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.card__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+
+	.card__actions {
+		margin-top: var(--sm-space-3);
+	}
+
+	.json {
+		margin-top: var(--sm-space-3);
+		max-height: var(--sm-space-12);
+		overflow: hidden;
+		background-color: var(--sm-color-bg-sunken);
+		border-radius: var(--sm-radius-md);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+	}
+
+	.json__text {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.restore {
+		margin-top: var(--sm-space-3);
+		border-radius: var(--sm-radius-md);
+		border-width: var(--sm-border-hairline);
+		border-style: solid;
+		border-color: var(--sm-color-border-default);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+	}
+
+	.restore__input {
+		width: 100%;
+		height: var(--sm-space-16);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-primary);
+	}
+
+	.restore__placeholder {
+		color: var(--sm-color-text-muted);
+		font-size: var(--sm-fs-sm);
+	}
+
+	.error {
+		margin-top: var(--sm-space-2);
+	}
+
+	.error__text {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-action-danger);
+	}
+
+	.auto {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.auto__body {
+		flex: 1;
+		flex-direction: column;
+		margin-right: var(--sm-space-3);
+	}
+</style>

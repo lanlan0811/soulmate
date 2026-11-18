@@ -1,0 +1,308 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar :title="isCreate ? '创建人设' : '编辑人设'" @back="goBack">
+		</sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view class="preview">
+					<sm-avatar :name="nameValue" :tone="tone" size="xl"></sm-avatar>
+					<text class="preview__name">{{ nameValue.length == 0 ? '未命名' : nameValue }}</text>
+					<text class="preview__tag">{{ tagline.length == 0 ? '一句话介绍会出现在人设卡上' : tagline }}</text>
+				</view>
+
+				<view class="tones">
+					<text class="tones__label">头像底色</text>
+					<view class="tones__list">
+						<view v-for="index in toneIndexes" :key="index" class="tones__dot" :class="[toneClass(index), index == tone ? 'tones__dot--active' : '']" @click="tone = index"></view>
+					</view>
+				</view>
+
+				<view class="field">
+					<sm-field v-model="nameValue" label="名字" hint="必填" placeholder="给 Ta 起个名字" :maxlength="20" :error="nameError"></sm-field>
+				</view>
+
+				<view class="field">
+					<sm-field v-model="tagline" label="一句话介绍" placeholder="温柔、安静、有点小心思" :maxlength="40" :countable="true"></sm-field>
+				</view>
+
+				<view class="field">
+					<sm-field v-model="soul" label="人格设定（SOUL.md）" hint="Markdown" placeholder="Ta 是谁、怎么说话、在乎什么、绝对不做的事…" :maxlength="2000" :multiline="true" :countable="true"></sm-field>
+				</view>
+
+				<view class="field">
+					<sm-field v-model="greeting" label="开场白" hint="可选" placeholder="Ta 在新对话里说的第一句话" :maxlength="120" :countable="true"></sm-field>
+				</view>
+
+				<sm-section title="记忆方式">
+					<sm-segment :items="memoryItems" v-model="memoryMode"></sm-segment>
+				</sm-section>
+
+				<view class="toggles">
+					<view class="toggle">
+						<view class="toggle__body">
+							<text class="toggle__title">主动消息</text>
+							<text class="toggle__desc">允许 Ta 按情绪和时机主动找你</text>
+						</view>
+						<sm-switch v-model="proactive"></sm-switch>
+					</view>
+					<view class="toggle">
+						<view class="toggle__body">
+							<text class="toggle__title">置顶人设</text>
+							<text class="toggle__desc">排在列表最前面</text>
+						</view>
+						<sm-switch v-model="pinned"></sm-switch>
+					</view>
+				</view>
+
+				<view class="save">
+					<sm-button :label="isCreate ? '创建' : '保存'" block size="lg" @tap="save"></sm-button>
+				</view>
+				<view v-if="!isCreate" class="danger">
+					<sm-button label="删除人设" variant="danger" block size="md" icon="trash" @tap="askDelete"></sm-button>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+
+		<sm-dialog :visible="deleteVisible" title="删除这个人物？" desc="Ta 的会话与记忆会一并删除，且无法恢复。" confirm-label="删除" danger @confirm="confirmDelete" @cancel="deleteVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state } from '../../store/app.uts'
+	import { findPersona, updatePersona, deletePersona, persist } from '../../store/app.uts'
+	import { toneBgClass } from '../../utils/format.uts'
+
+	const personaId = ref('')
+	const isCreate = ref(true)
+	const tone = ref(0)
+	const nameValue = ref('')
+	const tagline = ref('')
+	const soul = ref('')
+	const greeting = ref('')
+	const memoryMode = ref('standard')
+	const proactive = ref(true)
+	const pinned = ref(false)
+	const nameError = ref('')
+	const deleteVisible = ref(false)
+
+	const toneIndexes = [0, 1, 2, 3, 4, 5]
+	const memoryItems = [
+		{ value: 'standard', label: '标准' },
+		{ value: 'strong', label: '强化' },
+		{ value: 'off', label: '关闭' }
+	]
+
+	onLoad((query) => {
+		const q = query as UTSJSONObject | null
+		let id = ''
+		let mode = 'create'
+		if (q != null) {
+			const rawId = q['id']
+			const rawMode = q['mode']
+			if (rawId != null) id = `${rawId}`
+			if (rawMode != null) mode = `${rawMode}`
+		}
+		if (id.length == 0 && mode == 'create') {
+			const created = createDraft()
+			personaId.value = created
+			isCreate.value = true
+			return
+		}
+		personaId.value = id
+		isCreate.value = false
+		const p = findPersona(id)
+		if (p != null) {
+			tone.value = p!.tone
+			nameValue.value = p!.name
+			tagline.value = p!.tagline
+			soul.value = p!.soul
+			greeting.value = p!.greeting
+			memoryMode.value = p!.memoryMode
+			proactive.value = p!.proactive
+			pinned.value = p!.pinned
+		}
+	})
+
+	const toneClass = (index: number): string => toneBgClass(index)
+
+	const createDraft = (): string => {
+		// 不落库，等用户保存；这里只生成临时 id 与空状态
+		return `p_new_${Date.now()}`
+	}
+
+	const save = (): void => {
+		if (nameValue.value.trim().length == 0) {
+			nameError.value = '给 Ta 起个名字吧'
+			return
+		}
+		nameError.value = ''
+		const existing = findPersona(personaId.value)
+		if (existing != null) {
+			existing!.name = nameValue.value.trim()
+			existing!.tagline = tagline.value.trim()
+			existing!.soul = soul.value
+			existing!.greeting = greeting.value
+			existing!.tone = tone.value
+			existing!.memoryMode = memoryMode.value
+			existing!.proactive = proactive.value
+			existing!.pinned = pinned.value
+			updatePersona(existing!)
+		} else {
+			state.personas.push({
+				id: personaId.value,
+				name: nameValue.value.trim(),
+				tagline: tagline.value.trim(),
+				soul: soul.value,
+				greeting: greeting.value,
+				tone: tone.value,
+				pinned: pinned.value,
+				proactive: proactive.value,
+				memoryMode: memoryMode.value,
+				createdAt: Date.now()
+			})
+			persist()
+		}
+		uni.showToast({ title: '已保存', position: 'bottom' })
+		uni.navigateBack()
+	}
+
+	const askDelete = (): void => {
+		deleteVisible.value = true
+	}
+
+	const confirmDelete = (): void => {
+		deletePersona(personaId.value)
+		deleteVisible.value = false
+		uni.navigateBack()
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.preview {
+		align-items: center;
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+	}
+
+	.preview__name {
+		margin-top: var(--sm-space-3);
+		font-size: var(--sm-fs-xl);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.preview__tag {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.tones {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		margin-bottom: var(--sm-space-4);
+	}
+
+	.tones__label {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.tones__list {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.tones__dot {
+		width: var(--sm-size-control-sm);
+		height: var(--sm-size-control-sm);
+		border-radius: var(--sm-radius-full);
+		margin-left: var(--sm-space-2);
+		border-width: var(--sm-border-thick);
+		border-style: solid;
+		border-color: transparent;
+	}
+
+	.tones__dot--active {
+		border-color: var(--sm-color-action-primary);
+	}
+
+	.field {
+		margin-bottom: var(--sm-space-4);
+	}
+
+	.toggles {
+		flex-direction: column;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		margin-top: var(--sm-space-4);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+	}
+
+	.toggle {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+	}
+
+	.toggle__body {
+		flex: 1;
+		flex-direction: column;
+		margin-right: var(--sm-space-3);
+	}
+
+	.toggle__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-primary);
+	}
+
+	.toggle__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.save {
+		margin-top: var(--sm-space-6);
+	}
+
+	.danger {
+		margin-top: var(--sm-space-3);
+	}
+</style>

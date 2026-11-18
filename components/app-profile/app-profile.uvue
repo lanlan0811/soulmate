@@ -1,0 +1,271 @@
+<template>
+	<view class="panel">
+		<view class="panel__head">
+			<text class="panel__title">我的</text>
+		</view>
+
+		<scroll-view class="panel__scroll" :scroll-y="true">
+			<view class="hero">
+				<view class="hero__avatar">
+					<sm-avatar :name="avatarName" :tone="state.profile.tone" size="xl"></sm-avatar>
+				</view>
+				<view class="hero__body">
+					<text class="hero__name">{{ nickname }}</text>
+					<view class="hero__pill">
+						<text class="hero__pill-text">本机模式</text>
+					</view>
+				</view>
+				<view class="hero__edit" :hover-class="'hero__edit--pressed'" @click="goEditProfile">
+					<text class="hero__edit-text">编辑</text>
+				</view>
+			</view>
+
+			<view class="local">
+				<view class="local__head">
+					<sm-icon name="lock" variant="brand" size="sm"></sm-icon>
+					<text class="local__title">数据只在这台手机上</text>
+				</view>
+				<text class="local__desc">人设、对话、记忆都保存在本机，不上传、不经过服务器。当前无账号体系，也无需登录。</text>
+			</view>
+
+			<view class="stats">
+				<sm-stat label="对话" :value="state.sessions.length" icon="message-circle"></sm-stat>
+				<sm-stat label="消息" :value="messageCount" icon="mail"></sm-stat>
+				<sm-stat label="人设" :value="state.personas.length" icon="smile"></sm-stat>
+				<sm-stat label="记忆" :value="state.memories.length" icon="sparkles"></sm-stat>
+			</view>
+
+			<view class="blocks">
+				<sm-list-group>
+					<sm-list-row title="全部对话的看板" desc="聊了多少、关系走到了哪一步" icon="chart-bar" @tap="goDashboard"></sm-list-row>
+					<view class="divider"></view>
+					<sm-list-row title="数据备份" desc="导出人设 / 对话 / 记忆，也可以从文本恢复" icon="download" icon-tone="sunken" @tap="goBackup"></sm-list-row>
+					<view class="divider"></view>
+					<sm-list-row title="说什么" desc="用着别扭、缺了什么，或者只是想夸一句" icon="edit" icon-tone="accent" @tap="goFeedback"></sm-list-row>
+					<view class="divider"></view>
+					<sm-list-row title="全部设置" desc="连接、功能、外观" icon="settings" icon-tone="sunken" @tap="goSettings"></sm-list-row>
+				</sm-list-group>
+			</view>
+
+			<view class="blocks">
+				<sm-list-group>
+					<sm-list-row title="清除本机数据" desc="删除全部人设、对话、记忆与设置" icon="trash" danger :arrow="false" @tap="askClear"></sm-list-row>
+				</sm-list-group>
+			</view>
+
+			<view class="foot">
+				<text class="foot__text">心契 · 本地优先，关系留在这里</text>
+			</view>
+		</scroll-view>
+
+		<sm-dialog :visible="clearVisible" title="清除本机数据？" desc="所有人设、对话、记忆和设置都会被删除，且无法恢复。" confirm-label="清除" danger @confirm="confirmClear" @cancel="clearVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state, totalMessages, clearAllData } from '../../store/app.uts'
+
+	const emit = defineEmits(['editProfile', 'goSettings', 'goDashboard', 'goBackup', 'goFeedback'])
+
+	const clearVisible = ref(false)
+
+	const nickname = computed((): string => {
+		return state.profile.nickname.length == 0 ? '还没有称呼' : state.profile.nickname
+	})
+
+	const avatarName = computed((): string => state.profile.nickname.length == 0 ? '我' : state.profile.nickname)
+
+	const messageCount = computed((): number => totalMessages())
+
+	const goEditProfile = (): void => {
+		emit('editProfile')
+	}
+
+	const goSettings = (): void => {
+		emit('goSettings')
+	}
+
+	const goDashboard = (): void => {
+		emit('goDashboard')
+	}
+
+	const goBackup = (): void => {
+		emit('goBackup')
+	}
+
+	const goFeedback = (): void => {
+		emit('goFeedback')
+	}
+
+	const askClear = (): void => {
+		clearVisible.value = true
+	}
+
+	const confirmClear = (): void => {
+		clearAllData()
+		clearVisible.value = false
+		uni.showToast({ title: '已清除本机数据', position: 'bottom' })
+	}
+</script>
+
+<style>
+	.panel {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.panel__head {
+		flex-direction: row;
+		align-items: center;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		height: var(--sm-size-nav-bar);
+	}
+
+	.panel__title {
+		font-size: var(--sm-fs-display);
+		font-weight: var(--sm-weight-bold);
+		letter-spacing: var(--sm-tracking-tight);
+		color: var(--sm-color-text-primary);
+	}
+
+	.panel__scroll {
+		flex: 1;
+	}
+
+	.hero {
+		background-image: linear-gradient(to bottom right, var(--sm-palette-hero-from), var(--sm-palette-hero-to));
+		flex-direction: row;
+		align-items: center;
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+		padding-top: var(--sm-space-5);
+		padding-bottom: var(--sm-space-5);
+		border-radius: var(--sm-radius-xl);
+	}
+
+	.hero__avatar {
+		border-width: var(--sm-border-thick);
+		border-style: solid;
+		border-color: var(--sm-palette-on-brand-soft);
+		border-radius: var(--sm-radius-full);
+		width: var(--sm-size-avatar-xl);
+		height: var(--sm-size-avatar-xl);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.hero__body {
+		flex: 1;
+		flex-direction: column;
+		margin-left: var(--sm-space-4);
+	}
+
+	.hero__name {
+		font-size: var(--sm-fs-xl);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.hero__pill {
+		flex-direction: row;
+		align-self: flex-start;
+		margin-top: var(--sm-space-2);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-palette-on-brand-soft);
+	}
+
+	.hero__pill-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-primary);
+		font-weight: var(--sm-weight-medium);
+	}
+
+	.hero__edit {
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-palette-on-brand-soft);
+	}
+
+	.hero__edit--pressed {
+		opacity: 0.8;
+	}
+
+	.hero__edit-text {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-primary);
+		font-weight: var(--sm-weight-medium);
+	}
+
+	.local {
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		border-radius: var(--sm-radius-lg);
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.local__head {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.local__title {
+		margin-left: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-brand-800);
+	}
+
+	.local__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-brand-800);
+	}
+
+	.stats {
+		flex-direction: row;
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+	}
+
+	.blocks {
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+	}
+
+	.divider {
+		height: var(--sm-border-hairline);
+		background-color: var(--sm-color-border-subtle);
+		margin-left: var(--sm-space-4);
+		margin-right: var(--sm-space-4);
+	}
+
+	.foot {
+		align-items: center;
+		padding-top: var(--sm-space-6);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.foot__text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

@@ -1,0 +1,127 @@
+<template>
+	<view class="sm-dock">
+		<view class="sm-dock__inner">
+			<view class="sm-dock__plus" :hover-class="'sm-dock__plus--pressed'" @click="onMore">
+				<sm-icon name="plus" variant="brand" size="lg"></sm-icon>
+			</view>
+			<input class="sm-dock__input" :value="modelValue" :placeholder="placeholder" placeholder-class="sm-dock__placeholder" confirm-type="send" :adjust-position="true" @input="onInput" @confirm="onSend" />
+			<view class="sm-dock__send" :class="canSend ? 'sm-dock__send--on' : 'sm-dock__send--off'" @click="onSend">
+				<text class="sm-dock__send-text" :class="canSend ? 'sm-dock__send-text--on' : ''">发送</text>
+			</view>
+		</view>
+		<text class="sm-dock__note">本地预览 · 消息只保存在这台手机上</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		modelValue?: string
+		placeholder?: string
+	}>(), {
+		modelValue: '',
+		placeholder: '说点什么…'
+	})
+
+	const emit = defineEmits(['update:modelValue', 'send', 'more'])
+
+	const canSend = computed((): boolean => props.modelValue.trim().length > 0)
+
+	const onInput = (event: UniInputEvent): void => {
+		emit('update:modelValue', event.detail.value)
+	}
+
+	const onSend = (): void => {
+		if (!canSend.value) return
+		emit('send')
+	}
+
+	const onMore = (): void => {
+		emit('more')
+	}
+</script>
+
+<style>
+	.sm-dock {
+		flex-direction: column;
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+		background-color: var(--sm-color-bg-canvas);
+		flex-shrink: 0;
+	}
+
+	.sm-dock__inner {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-composer);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-surface);
+		box-shadow: var(--sm-shadow-md);
+	}
+
+	.sm-dock__plus {
+		width: var(--sm-size-control-md);
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sm-dock__plus--pressed {
+		opacity: 0.7;
+	}
+
+	.sm-dock__input {
+		flex: 1;
+		margin-left: var(--sm-space-2);
+		margin-right: var(--sm-space-2);
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+		height: var(--sm-size-control-lg);
+	}
+
+	.sm-dock__placeholder {
+		color: var(--sm-color-text-muted);
+		font-size: var(--sm-fs-md);
+	}
+
+	.sm-dock__send {
+		height: var(--sm-size-control-md);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		border-radius: var(--sm-radius-full);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sm-dock__send--on {
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.sm-dock__send--off {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.sm-dock__send-text {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-muted);
+	}
+
+	.sm-dock__send-text--on {
+		color: var(--sm-color-action-primary-text);
+	}
+
+	.sm-dock__note {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+		text-align: center;
+	}
+</style>

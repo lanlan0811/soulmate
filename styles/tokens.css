@@ -1,0 +1,192 @@
+/* 自动生成：node scripts/gen-tokens.mjs —— 请勿手改。
+   来源 design/tokens.base.json + design/brand.override.json;
+   颜色 / 间距 / 圆角 / 字号 / 动效一律通过 --sm-* 变量使用。 */
+
+page,
+.sm-theme {
+  --sm-color-neutral-0: #FFFFFF;
+  --sm-color-neutral-50: #F5F0FF;
+  --sm-color-neutral-100: #EDE7F9;
+  --sm-color-neutral-200: #E2D9F2;
+  --sm-color-neutral-300: #C9BEE4;
+  --sm-color-neutral-500: #8378A3;
+  --sm-color-neutral-700: #4A4463;
+  --sm-color-neutral-800: #2C2744;
+  --sm-color-neutral-850: #211D38;
+  --sm-color-neutral-900: #17152B;
+  --sm-color-neutral-950: #100E1F;
+  --sm-color-brand-100: #E6ECFC;
+  --sm-color-brand-300: #C3D0F6;
+  --sm-color-brand-500: #A8BAEF;
+  --sm-color-brand-600: #8FA5E6;
+  --sm-color-brand-700: #7183CE;
+  --sm-color-brand-800: #5B4C9B;
+  --sm-color-accent-100: #FCEAF3;
+  --sm-color-accent-300: #F8D3E6;
+  --sm-color-accent-500: #F3B9D4;
+  --sm-color-accent-600: #E79FC0;
+  --sm-color-accent-700: #C97DA0;
+  --sm-color-success-50: #E6F5EC;
+  --sm-color-success-500: #3D8B5F;
+  --sm-color-warning-50: #FDF2DD;
+  --sm-color-warning-500: #A97312;
+  --sm-color-danger-50: #FDE8EE;
+  --sm-color-danger-500: #C03A5E;
+  --sm-color-info-50: #E7EEFB;
+  --sm-color-info-500: #3A6BA8;
+  --sm-color-bg-canvas: #F5F0FF;
+  --sm-color-bg-surface: #FFFFFF;
+  --sm-color-bg-raised: #FFFFFF;
+  --sm-color-bg-sunken: #EDE7F9;
+  --sm-color-bg-inverse: #17152B;
+  --sm-color-text-primary: #17152B;
+  --sm-color-text-secondary: #4A4463;
+  --sm-color-text-muted: #8378A3;
+  --sm-color-text-inverse: #FFFFFF;
+  --sm-color-text-link: #5B4C9B;
+  --sm-color-border-default: #E2D9F2;
+  --sm-color-border-strong: #C9BEE4;
+  --sm-color-border-subtle: #EDE7F9;
+  --sm-color-border-focus: #A8BAEF;
+  --sm-color-action-primary: #A8BAEF;
+  --sm-color-action-primary-hover: #8FA5E6;
+  --sm-color-action-primary-text: #17152B;
+  --sm-color-action-secondary: #EDE7F9;
+  --sm-color-action-secondary-hover: #E2D9F2;
+  --sm-color-action-secondary-text: #17152B;
+  --sm-color-action-ghost-hover: #E6ECFC;
+  --sm-color-action-danger: #C03A5E;
+  --sm-color-action-danger-text: #FFFFFF;
+  --sm-color-status-success: #3D8B5F;
+  --sm-color-status-success-bg: #E6F5EC;
+  --sm-color-status-warning: #A97312;
+  --sm-color-status-warning-bg: #FDF2DD;
+  --sm-color-status-danger: #C03A5E;
+  --sm-color-status-danger-bg: #FDE8EE;
+  --sm-color-status-info: #3A6BA8;
+  --sm-color-status-info-bg: #E7EEFB;
+  --sm-color-chart-1: #7E8FE0;
+  --sm-color-chart-2: #D9739E;
+  --sm-color-chart-3: #3D8B5F;
+  --sm-color-chart-4: #9C86E8;
+  --sm-color-chart-5: #A97312;
+  --sm-color-overlay-scrim: rgba(23,21,43,0.45);
+  --sm-palette-tint0-bg: #E6ECFC;
+  --sm-palette-tint0-fg: #5B4C9B;
+  --sm-palette-tint1-bg: #EDE7F9;
+  --sm-palette-tint1-fg: #4A4463;
+  --sm-palette-tint2-bg: #FCEAF3;
+  --sm-palette-tint2-fg: #C97DA0;
+  --sm-palette-tint3-bg: #E6F5EC;
+  --sm-palette-tint3-fg: #3D8B5F;
+  --sm-palette-tint4-bg: #FDF2DD;
+  --sm-palette-tint4-fg: #A97312;
+  --sm-palette-tint5-bg: #E7EEFB;
+  --sm-palette-tint5-fg: #3A6BA8;
+  --sm-palette-hero-from: #A8BAEF;
+  --sm-palette-hero-to: #8FA5E6;
+  --sm-palette-deep-from: #17152B;
+  --sm-palette-deep-to: #211D38;
+  --sm-palette-on-brand-muted: #2C2744;
+  --sm-palette-on-brand-soft: rgba(255,255,255,0.5);
+  --sm-palette-on-deep-muted: #C9BEE4;
+  --sm-palette-on-deep-soft: #4A4463;
+  --sm-palette-scrim-soft: rgba(23,21,43,0.28);
+  --sm-fs-xs: 11px;
+  --sm-fs-sm: 13px;
+  --sm-fs-md: 15px;
+  --sm-fs-lg: 18px;
+  --sm-fs-xl: 22px;
+  --sm-fs-2xl: 28px;
+  --sm-fs-3xl: 36px;
+  --sm-fs-4xl: 50px;
+  --sm-fs-2xs: 10px;
+  --sm-fs-display: 26px;
+  --sm-weight-regular: 400;
+  --sm-weight-medium: 500;
+  --sm-weight-semibold: 600;
+  --sm-weight-bold: 700;
+  --sm-lh-tight: 1.15;
+  --sm-lh-snug: 1.35;
+  --sm-lh-normal: 1.55;
+  --sm-lh-relaxed: 1.75;
+  --sm-tracking-tight: -0.02em;
+  --sm-tracking-normal: 0;
+  --sm-tracking-wide: 0.04em;
+  --sm-space-0: 0px;
+  --sm-space-1: 4px;
+  --sm-space-2: 8px;
+  --sm-space-3: 12px;
+  --sm-space-4: 16px;
+  --sm-space-5: 20px;
+  --sm-space-6: 24px;
+  --sm-space-8: 32px;
+  --sm-space-10: 40px;
+  --sm-space-12: 48px;
+  --sm-space-16: 64px;
+  --sm-radius-none: 0px;
+  --sm-radius-sm: 10px;
+  --sm-radius-md: 14px;
+  --sm-radius-lg: 20px;
+  --sm-radius-xl: 28px;
+  --sm-radius-full: 9999px;
+  --sm-radius-xs: 6px;
+  --sm-border-hairline: 1px;
+  --sm-border-thin: 1.5px;
+  --sm-border-thick: 2px;
+  --sm-shadow-sm: 0 2px 8px rgba(122,120,180,0.10);
+  --sm-shadow-md: 0 8px 24px rgba(122,120,180,0.16), 0 2px 6px rgba(23,21,43,0.05);
+  --sm-shadow-lg: 0 20px 48px rgba(122,120,180,0.24), 0 6px 16px rgba(23,21,43,0.08);
+  --sm-size-control-sm: 30px;
+  --sm-size-control-md: 38px;
+  --sm-size-control-lg: 46px;
+  --sm-size-icon-sm: 14px;
+  --sm-size-icon-md: 18px;
+  --sm-size-icon-lg: 22px;
+  --sm-size-container-sm: 660px;
+  --sm-size-container-md: 1000px;
+  --sm-size-container-lg: 1140px;
+  --sm-size-sidebar: 252px;
+  --sm-size-nav-bar: 56px;
+  --sm-size-tab-bar: 68px;
+  --sm-size-composer: 56px;
+  --sm-size-avatar-sm: 32px;
+  --sm-size-avatar-md: 44px;
+  --sm-size-avatar-lg: 64px;
+  --sm-size-avatar-xl: 76px;
+  --sm-size-icon-xl: 28px;
+  --sm-size-bubble-max: 268px;
+  --sm-size-page-gutter: 16px;
+  --sm-motion-fast: 160ms;
+  --sm-motion-base: 260ms;
+  --sm-ease: cubic-bezier(.22,.78,.32,1);
+  --sm-safe-top: 0px;
+  --sm-safe-bottom: 0px;
+}
+
+.sm-tint-0 { background-color: #E6ECFC; }
+.sm-tint-fg-0 { color: #5B4C9B; }
+.sm-tint-1 { background-color: #EDE7F9; }
+.sm-tint-fg-1 { color: #4A4463; }
+.sm-tint-2 { background-color: #FCEAF3; }
+.sm-tint-fg-2 { color: #C97DA0; }
+.sm-tint-3 { background-color: #E6F5EC; }
+.sm-tint-fg-3 { color: #3D8B5F; }
+.sm-tint-4 { background-color: #FDF2DD; }
+.sm-tint-fg-4 { color: #A97312; }
+.sm-tint-5 { background-color: #E7EEFB; }
+.sm-tint-fg-5 { color: #3A6BA8; }
+
+/* 渐变：App 平台 linear-gradient 仅支持两色 + 方向 */
+
+
+
+/* 布局工具类：单类名、长写属性 */
+.sm-u-row { flex-direction: row; }
+.sm-u-col { flex-direction: column; }
+.sm-u-wrap { flex-wrap: wrap; }
+.sm-u-flex-1 { flex-grow: 1; flex-shrink: 1; }
+.sm-u-none { display: none; }
+.sm-u-abs { position: absolute; }
+.sm-u-rel { position: relative; }
+.sm-u-grow { flex-grow: 1; }

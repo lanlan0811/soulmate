@@ -1,0 +1,45 @@
+<template>
+	<view class="sm-section">
+		<view v-if="title.length > 0 || desc.length > 0" class="sm-section__head">
+			<text class="sm-section__title">{{ title }}</text>
+			<text v-if="desc.length > 0" class="sm-section__desc">{{ desc }}</text>
+		</view>
+		<slot></slot>
+	</view>
+</template>
+
+<script setup lang="ts">
+	withDefaults(defineProps<{
+		title?: string
+		desc?: string
+	}>(), {
+		title: '',
+		desc: ''
+	})
+</script>
+
+<style>
+	.sm-section {
+		flex-direction: column;
+	}
+
+	.sm-section__head {
+		flex-direction: row;
+		align-items: baseline;
+		justify-content: space-between;
+		margin-bottom: var(--sm-space-2);
+		padding-left: var(--sm-space-1);
+		padding-right: var(--sm-space-1);
+	}
+
+	.sm-section__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.sm-section__desc {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

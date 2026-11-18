@@ -1,0 +1,280 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="看板" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view class="stats">
+					<sm-stat label="对话" :value="sessionCount" icon="message-circle"></sm-stat>
+					<sm-stat label="消息" :value="messageTotal" icon="mail"></sm-stat>
+					<sm-stat label="人设" :value="personaCount" icon="smile"></sm-stat>
+					<sm-stat label="记忆" :value="memoryCount" icon="sparkles"></sm-stat>
+				</view>
+
+				<view class="card">
+					<text class="card__title">最近 7 天</text>
+					<view v-if="hasWeekData" class="chart">
+						<view v-for="item in weekBars" :key="item.label" class="chart__col">
+							<view class="chart__bar-wrap">
+								<view class="chart__bar" :style="`height: ${item.height}px;`"></view>
+							</view>
+							<text class="chart__label">{{ item.label }}</text>
+							<text class="chart__value">{{ item.count }}</text>
+						</view>
+					</view>
+					<sm-empty v-else icon="chart-bar" title="还没有数据" desc="开始第一段对话后，这里会出现消息趋势"></sm-empty>
+				</view>
+
+				<view class="card">
+					<text class="card__title">人设分布</text>
+					<view v-if="personaStats.length > 0" class="personas">
+						<view v-for="item in personaStats" :key="item.id" class="persona">
+							<sm-avatar :name="item.name" :tone="item.tone" size="sm"></sm-avatar>
+							<text class="persona__name">{{ item.name }}</text>
+							<view class="persona__bar">
+								<view class="persona__fill" :style="`width: ${item.percent}%;`"></view>
+							</view>
+							<text class="persona__count">{{ item.count }}</text>
+						</view>
+					</view>
+					<text v-else class="card__empty">还没有人设，创建一个再回来看看。</text>
+				</view>
+
+				<view class="card">
+					<text class="card__title">关于这组数字</text>
+					<text class="card__text">全部统计都在本机计算，不上传任何内容。数字会随你的对话实时变化。</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+	import { state, totalMessages } from '../../store/app.uts'
+	import { SIZE } from '../../theme/tokens'
+	import { pad2 } from '../../utils/format.uts'
+
+	type BarItem = {
+		label: string
+		count: number
+		height: number
+	}
+
+	type PersonaStat = {
+		id: string
+		name: string
+		tone: number
+		count: number
+		percent: number
+	}
+
+	const sessionCount = computed((): number => state.sessions.length)
+	const messageTotal = computed((): number => totalMessages())
+	const personaCount = computed((): number => state.personas.length)
+	const memoryCount = computed((): number => state.memories.length)
+
+	const dayLabels = (): string[] => {
+		const result: string[] = []
+		for (let i = 6; i >= 0; i--) {
+			const d = new Date(Date.now() - i * 86400000)
+			result.push(`${d.getMonth() + 1}/${d.getDate()}`)
+		}
+		return result
+	}
+
+	const weekCounts = computed((): number[] => {
+		const counts: number[] = [0, 0, 0, 0, 0, 0, 0]
+		const now = Date.now()
+		for (let s = 0; s < state.sessions.length; s++) {
+			const messages = state.sessions[s].messages
+			for (let m = 0; m < messages.length; m++) {
+				const diff = now - messages[m].createdAt
+				const day = Math.floor(diff / 86400000)
+				if (day >= 0 && day <= 6) counts[6 - day] = counts[6 - day] + 1
+			}
+		}
+		return counts
+	})
+
+	const hasWeekData = computed((): boolean => {
+		const counts = weekCounts.value
+		for (let i = 0; i < counts.length; i++) {
+			if (counts[i] > 0) return true
+		}
+		return false
+	})
+
+	const weekBars = computed((): BarItem[] => {
+		const labels = dayLabels()
+		const counts = weekCounts.value
+		let max = 1
+		for (let i = 0; i < counts.length; i++) {
+			if (counts[i] > max) max = counts[i]
+		}
+		const result: BarItem[] = []
+		for (let i = 0; i < counts.length; i++) {
+			const height = counts[i] == 0 ? 4 : Math.round((counts[i] / max) * 96)
+			result.push({ label: labels[i], count: counts[i], height: height } as BarItem)
+		}
+		return result
+	})
+
+	const personaStats = computed((): PersonaStat[] => {
+		const result: PersonaStat[] = []
+		let total = 0
+		for (let i = 0; i < state.personas.length; i++) {
+			const p = state.personas[i]
+			let count = 0
+			for (let s = 0; s < state.sessions.length; s++) {
+				if (state.sessions[s].personaId == p.id) count += state.sessions[s].messages.length
+			}
+			total += count
+			result.push({
+				id: p.id,
+				name: p.name.length == 0 ? '未命名' : p.name,
+				tone: p.tone,
+				count: count,
+				percent: 0
+			} as PersonaStat)
+		}
+		for (let i = 0; i < result.length; i++) {
+			result[i].percent = total == 0 ? 0 : Math.round((result[i].count / total) * 100)
+		}
+		return result
+	})
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.stats {
+		flex-direction: row;
+	}
+
+	.card {
+		margin-top: var(--sm-space-3);
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.card__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.card__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+
+	.card__empty {
+		margin-top: var(--sm-space-3);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.chart {
+		flex-direction: row;
+		align-items: flex-end;
+		height: var(--sm-space-12);
+		margin-top: var(--sm-space-4);
+	}
+
+	.chart__col {
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.chart__bar-wrap {
+		height: var(--sm-space-12);
+		flex-direction: column;
+		justify-content: flex-end;
+	}
+
+	.chart__bar {
+		width: var(--sm-space-4);
+		border-radius: var(--sm-radius-sm);
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.chart__label {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.chart__value {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.personas {
+		flex-direction: column;
+		margin-top: var(--sm-space-2);
+	}
+
+	.persona {
+		flex-direction: row;
+		align-items: center;
+		margin-top: var(--sm-space-3);
+	}
+
+	.persona__name {
+		width: var(--sm-space-16);
+		margin-left: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-primary);
+	}
+
+	.persona__bar {
+		flex: 1;
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-sunken);
+		overflow: hidden;
+	}
+
+	.persona__fill {
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-accent-500);
+	}
+
+	.persona__count {
+		width: var(--sm-space-8);
+		text-align: right;
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

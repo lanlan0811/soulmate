@@ -1,0 +1,164 @@
+<template>
+	<view class="sm-btn" :class="[variantClass, sizeClass, blockClass, disabledClass]" :hover-class="hoverClass" @click="onTap">
+		<sm-icon v-if="icon.length > 0" :name="icon" :variant="iconVariant" :size="iconSize"></sm-icon>
+		<text class="sm-btn__label" :class="[labelSizeClass, labelVariantClass]">{{ label }}</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		label?: string
+		icon?: string
+		variant?: string
+		size?: string
+		block?: boolean
+		disabled?: boolean
+	}>(), {
+		label: '',
+		icon: '',
+		variant: 'primary',
+		size: 'md',
+		block: false,
+		disabled: false
+	})
+
+	const emit = defineEmits(['tap'])
+
+	const variantClass = computed((): string => {
+		if (props.variant == 'secondary') return 'sm-btn--secondary'
+		if (props.variant == 'ghost') return 'sm-btn--ghost'
+		if (props.variant == 'danger') return 'sm-btn--danger'
+		if (props.variant == 'soft') return 'sm-btn--soft'
+		return 'sm-btn--primary'
+	})
+
+	const sizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-btn--sm'
+		if (props.size == 'lg') return 'sm-btn--lg'
+		return 'sm-btn--md'
+	})
+
+	const blockClass = computed((): string => (props.block ? 'sm-btn--block' : ''))
+
+	const disabledClass = computed((): string => (props.disabled ? 'sm-btn--disabled' : ''))
+
+	const hoverClass = computed((): string => (props.disabled ? 'none' : 'sm-btn--pressed'))
+
+	const iconVariant = computed((): string => {
+		if (props.variant == 'primary' || props.variant == 'danger') return 'inverse'
+		return 'brand'
+	})
+
+	const iconSize = computed((): string => (props.size == 'sm' ? 'sm' : 'md'))
+
+	const labelSizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-btn__label--sm'
+		if (props.size == 'lg') return 'sm-btn__label--lg'
+		return 'sm-btn__label--md'
+	})
+
+	const labelVariantClass = computed((): string => {
+		if (props.variant == 'secondary') return 'sm-btn__label--secondary'
+		if (props.variant == 'ghost') return 'sm-btn__label--ghost'
+		if (props.variant == 'soft') return 'sm-btn__label--soft'
+		if (props.variant == 'danger') return 'sm-btn__label--on-dark'
+		return 'sm-btn__label--on-dark'
+	})
+
+	const onTap = (): void => {
+		if (props.disabled) return
+		emit('tap')
+	}
+</script>
+
+<style>
+	.sm-btn {
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-btn--primary {
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.sm-btn--secondary {
+		background-color: var(--sm-color-action-secondary);
+	}
+
+	.sm-btn--soft {
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.sm-btn--ghost {
+		background-color: transparent;
+	}
+
+	.sm-btn--danger {
+		background-color: var(--sm-color-action-danger);
+	}
+
+	.sm-btn--sm {
+		height: var(--sm-size-control-sm);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+	}
+
+	.sm-btn--md {
+		height: var(--sm-size-control-md);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+	}
+
+	.sm-btn--lg {
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+	}
+
+	.sm-btn--block {
+		width: 100%;
+	}
+
+	.sm-btn--pressed {
+		opacity: 0.82;
+	}
+
+	.sm-btn--disabled {
+		opacity: 0.4;
+	}
+
+	.sm-btn__label--sm {
+		font-size: var(--sm-fs-xs);
+		font-weight: var(--sm-weight-medium);
+	}
+
+	.sm-btn__label--md {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.sm-btn__label--lg {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.sm-btn__label--on-dark {
+		color: var(--sm-color-action-primary-text);
+	}
+
+	.sm-btn__label--secondary {
+		color: var(--sm-color-action-secondary-text);
+	}
+
+	.sm-btn__label--soft {
+		color: var(--sm-color-brand-800);
+	}
+
+	.sm-btn__label--ghost {
+		color: var(--sm-color-text-link);
+	}
+</style>

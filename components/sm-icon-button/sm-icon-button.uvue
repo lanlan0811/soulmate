@@ -1,0 +1,93 @@
+<template>
+	<view class="sm-icon-btn" :class="[toneClass, sizeClass]" :hover-class="'sm-icon-btn--pressed'" @click="onTap">
+		<sm-icon :name="name" :variant="iconVariant" :size="iconSize"></sm-icon>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		name: string
+		tone?: string
+		size?: string
+		disabled?: boolean
+	}>(), {
+		tone: 'plain',
+		size: 'md',
+		disabled: false
+	})
+
+	const emit = defineEmits(['tap'])
+
+	const toneClass = computed((): string => {
+		if (props.tone == 'soft') return 'sm-icon-btn--soft'
+		if (props.tone == 'brand') return 'sm-icon-btn--brand'
+		if (props.tone == 'ghost') return 'sm-icon-btn--ghost'
+		return 'sm-icon-btn--plain'
+	})
+
+	const sizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-icon-btn--sm'
+		if (props.size == 'lg') return 'sm-icon-btn--lg'
+		return 'sm-icon-btn--md'
+	})
+
+	const iconVariant = computed((): string => {
+		if (props.tone == 'brand' || props.tone == 'soft') return 'brand'
+		if (props.tone == 'ghost') return 'muted'
+		return 'ink'
+	})
+
+	const iconSize = computed((): string => (props.size == 'sm' ? 'sm' : 'md'))
+
+	const onTap = (): void => {
+		if (props.disabled) return
+		emit('tap')
+	}
+</script>
+
+<style>
+	.sm-icon-btn {
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--sm-radius-full);
+		flex-shrink: 0;
+	}
+
+	.sm-icon-btn--sm {
+		width: var(--sm-size-control-sm);
+		height: var(--sm-size-control-sm);
+	}
+
+	.sm-icon-btn--md {
+		width: var(--sm-size-control-md);
+		height: var(--sm-size-control-md);
+	}
+
+	.sm-icon-btn--lg {
+		width: var(--sm-size-control-lg);
+		height: var(--sm-size-control-lg);
+	}
+
+	.sm-icon-btn--plain {
+		background-color: var(--sm-color-bg-surface);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.sm-icon-btn--soft {
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.sm-icon-btn--brand {
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.sm-icon-btn--ghost {
+		background-color: transparent;
+	}
+
+	.sm-icon-btn--pressed {
+		opacity: 0.75;
+	}
+</style>

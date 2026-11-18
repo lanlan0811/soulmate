@@ -1,0 +1,103 @@
+<template>
+	<view class="sm-avatar" :class="[sizeClass, toneBgClass]">
+		<text class="sm-avatar__text" :class="[textClass, toneFgClass]">{{ label }}</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+	import { firstChar } from '../../utils/format.uts'
+	import { toneBgClass, toneFgClass } from '../../utils/format.uts'
+
+	const props = withDefaults(defineProps<{
+		name?: string
+		tone?: number
+		size?: string
+	}>(), {
+		name: '',
+		tone: 0,
+		size: 'md'
+	})
+
+	const label = computed((): string => firstChar(props.name))
+
+	const sizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-avatar--sm'
+		if (props.size == 'lg') return 'sm-avatar--lg'
+		if (props.size == 'xl') return 'sm-avatar--xl'
+		return 'sm-avatar--md'
+	})
+
+	const textClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-avatar__text--sm'
+		if (props.size == 'lg') return 'sm-avatar__text--lg'
+		if (props.size == 'xl') return 'sm-avatar__text--xl'
+		return 'sm-avatar__text--md'
+	})
+</script>
+
+<style>
+	.sm-avatar {
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.sm-avatar--sm {
+		width: var(--sm-size-avatar-sm);
+		height: var(--sm-size-avatar-sm);
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-avatar--md {
+		width: var(--sm-size-avatar-md);
+		height: var(--sm-size-avatar-md);
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-avatar--lg {
+		width: var(--sm-size-avatar-lg);
+		height: var(--sm-size-avatar-lg);
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-avatar--xl {
+		width: var(--sm-size-avatar-xl);
+		height: var(--sm-size-avatar-xl);
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-avatar__text {
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.sm-avatar__text--sm {
+		font-size: var(--sm-fs-xs);
+	}
+
+	.sm-avatar__text--md {
+		font-size: var(--sm-fs-lg);
+	}
+
+	.sm-avatar__text--lg {
+		font-size: var(--sm-fs-xl);
+	}
+
+	.sm-avatar__text--xl {
+		font-size: var(--sm-fs-2xl);
+	}
+
+	.sm-tint-0 { background-color: var(--sm-palette-tint0-bg); }
+	.sm-tint-1 { background-color: var(--sm-palette-tint1-bg); }
+	.sm-tint-2 { background-color: var(--sm-palette-tint2-bg); }
+	.sm-tint-3 { background-color: var(--sm-palette-tint3-bg); }
+	.sm-tint-4 { background-color: var(--sm-palette-tint4-bg); }
+	.sm-tint-5 { background-color: var(--sm-palette-tint5-bg); }
+
+	.sm-tint-fg-0 { color: var(--sm-palette-tint0-fg); }
+	.sm-tint-fg-1 { color: var(--sm-palette-tint1-fg); }
+	.sm-tint-fg-2 { color: var(--sm-palette-tint2-fg); }
+	.sm-tint-fg-3 { color: var(--sm-palette-tint3-fg); }
+	.sm-tint-fg-4 { color: var(--sm-palette-tint4-fg); }
+	.sm-tint-fg-5 { color: var(--sm-palette-tint5-fg); }
+</style>

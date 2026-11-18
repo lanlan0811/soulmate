@@ -1,0 +1,18 @@
+<template>
+	<view class="sm-group">
+		<slot></slot>
+	</view>
+</template>
+
+<script setup lang="ts">
+</script>
+
+<style>
+	.sm-group {
+		flex-direction: column;
+		border-radius: var(--sm-radius-lg);
+		background-color: var(--sm-color-bg-surface);
+		box-shadow: var(--sm-shadow-sm);
+		overflow: hidden;
+	}
+</style>

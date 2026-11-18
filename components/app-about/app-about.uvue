@@ -1,0 +1,452 @@
+<template>
+	<view class="panel">
+		<view class="panel__head">
+			<text class="panel__title">关于</text>
+		</view>
+
+		<scroll-view class="panel__scroll" :scroll-y="true">
+			<view class="brand">
+				<view class="brand__top">
+					<view class="brand__logo">
+						<sm-icon name="snowflake" variant="brand" size="xl"></sm-icon>
+					</view>
+					<view class="brand__title-wrap">
+						<text class="brand__title">心契</text>
+						<view class="brand__version">
+							<text class="brand__version-text">v{{ version }}</text>
+						</view>
+					</view>
+				</view>
+				<text class="brand__tagline">心有所契，相遇有期 · 数据只在你手机里</text>
+				<view class="brand__chips">
+					<view v-for="chip in chips" :key="chip" class="brand__chip">
+						<text class="brand__chip-text">{{ chip }}</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="card">
+				<text class="card__title">软件介绍</text>
+				<text class="card__text">一个活在手机里的 AI 恋人：人设由你写，Ta 会记住你说过的事，也会在你没开口的时候先想你。</text>
+				<view class="card__toggle" :hover-class="'card__toggle--pressed'" @click="expanded = !expanded">
+					<text class="card__toggle-text">{{ expanded ? '收起功能介绍' : '展开全部功能介绍' }}</text>
+				</view>
+				<view v-if="expanded" class="features">
+					<view v-for="item in features" :key="item.title" class="features__item">
+						<view class="features__dot"></view>
+						<view class="features__body">
+							<text class="features__title">{{ item.title }}</text>
+							<text class="features__desc">{{ item.desc }}</text>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<view class="devs">
+				<view class="devs__head">
+					<sm-icon name="snowflake" variant="deep" size="md"></sm-icon>
+					<text class="devs__brand">心契</text>
+				</view>
+				<view class="devs__line"></view>
+				<view v-for="person in developers" :key="person.name" class="dev">
+					<view class="dev__avatar">
+						<text class="dev__avatar-text">{{ person.initial }}</text>
+					</view>
+					<view class="dev__body">
+						<view class="dev__name-line">
+							<text class="dev__name">{{ person.name }}</text>
+							<view class="dev__role">
+								<text class="dev__role-text">{{ person.role }}</text>
+							</view>
+						</view>
+						<text class="dev__quote">{{ person.quote }}</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="card">
+				<view class="meta">
+					<text class="meta__label">版本</text>
+					<text class="meta__value">v{{ version }} · 心契</text>
+				</view>
+				<view class="meta__line"></view>
+				<view class="meta">
+					<text class="meta__label">数据</text>
+					<text class="meta__value">全部只存在这台手机上，不上传、不经过中间服务器</text>
+				</view>
+				<view class="meta__line"></view>
+				<view class="meta">
+					<text class="meta__label">许可</text>
+					<text class="meta__value">Apache License 2.0</text>
+				</view>
+				<view class="check">
+					<sm-button label="检查更新" block @tap="checkUpdate"></sm-button>
+				</view>
+			</view>
+
+			<view class="foot">
+				<text class="foot__text">心有所思，契阔成约</text>
+			</view>
+		</scroll-view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { ref } from 'vue'
+
+	type FeatureItem = {
+		title: string
+		desc: string
+	}
+
+	type DeveloperItem = {
+		name: string
+		initial: string
+		role: string
+		quote: string
+	}
+
+	const version = ref('0.1.0')
+	const expanded = ref(false)
+
+	const chips: string[] = ['会记事', '数据在本地', '有自主性', '持续更新']
+
+	const features: FeatureItem[] = [
+		{ title: 'Memory 记忆', desc: '短期上下文、长期事实、共同经历、情绪印记四层记忆，重要的事不会忘。' },
+		{ title: 'Soul 灵魂', desc: '用一份可编辑的 SOUL.md 决定 Ta 是谁、怎么说话、在乎什么。' },
+		{ title: 'Autonomy 主动', desc: '按情绪、时间和事件主动找你；有动机、有分寸，也能被你随时关掉。' },
+		{ title: '本地优先', desc: '人设、对话、记忆都留在本机，不依赖云端也能维持陪伴。' }
+	] as FeatureItem[]
+
+	const developers: DeveloperItem[] = [
+		{ name: 'lan', initial: 'L', role: '作者 · 开发', quote: '心有所契，相遇有期' }
+	] as DeveloperItem[]
+
+	const checkUpdate = (): void => {
+		uni.showToast({ title: '当前已是最新版本', position: 'bottom' })
+	}
+</script>
+
+<style>
+	.panel {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.panel__head {
+		flex-direction: row;
+		align-items: center;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		height: var(--sm-size-nav-bar);
+	}
+
+	.panel__title {
+		font-size: var(--sm-fs-display);
+		font-weight: var(--sm-weight-bold);
+		letter-spacing: var(--sm-tracking-tight);
+		color: var(--sm-color-text-primary);
+	}
+
+	.panel__scroll {
+		flex: 1;
+	}
+
+	.brand {
+		background-image: linear-gradient(to bottom right, var(--sm-palette-hero-from), var(--sm-palette-hero-to));
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+		padding-top: var(--sm-space-5);
+		padding-bottom: var(--sm-space-5);
+		border-radius: var(--sm-radius-xl);
+	}
+
+	.brand__top {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.brand__logo {
+		width: var(--sm-size-avatar-xl);
+		height: var(--sm-size-avatar-xl);
+		border-radius: var(--sm-radius-lg);
+		background-color: var(--sm-palette-on-brand-soft);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.brand__title-wrap {
+		flex-direction: column;
+		margin-left: var(--sm-space-4);
+	}
+
+	.brand__title {
+		font-size: var(--sm-fs-2xl);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+		letter-spacing: var(--sm-tracking-tight);
+	}
+
+	.brand__version {
+		flex-direction: row;
+		align-self: flex-start;
+		margin-top: var(--sm-space-1);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-palette-on-brand-soft);
+	}
+
+	.brand__version-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-primary);
+	}
+
+	.brand__tagline {
+		margin-top: var(--sm-space-4);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.brand__chips {
+		flex-direction: row;
+		flex-wrap: wrap;
+		margin-top: var(--sm-space-3);
+	}
+
+	.brand__chip {
+		margin-right: var(--sm-space-2);
+		margin-top: var(--sm-space-1);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-palette-on-brand-soft);
+	}
+
+	.brand__chip-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-primary);
+	}
+
+	.card {
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		border-radius: var(--sm-radius-lg);
+		background-color: var(--sm-color-bg-surface);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.card__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-brand-800);
+	}
+
+	.card__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-relaxed);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.card__toggle {
+		margin-top: var(--sm-space-3);
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.card__toggle--pressed {
+		opacity: 0.8;
+	}
+
+	.card__toggle-text {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-brand-800);
+	}
+
+	.features {
+		margin-top: var(--sm-space-3);
+		flex-direction: column;
+	}
+
+	.features__item {
+		flex-direction: row;
+		align-items: flex-start;
+		margin-top: var(--sm-space-3);
+	}
+
+	.features__dot {
+		width: var(--sm-space-2);
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-accent-500);
+		margin-top: var(--sm-space-2);
+	}
+
+	.features__body {
+		flex: 1;
+		flex-direction: column;
+		margin-left: var(--sm-space-3);
+	}
+
+	.features__title {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.features__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+
+	.devs {
+		background-image: linear-gradient(to bottom right, var(--sm-palette-deep-from), var(--sm-palette-deep-to));
+		margin-left: var(--sm-size-page-gutter);
+		margin-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+		padding-top: var(--sm-space-5);
+		padding-bottom: var(--sm-space-5);
+		border-radius: var(--sm-radius-xl);
+	}
+
+	.devs__head {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.devs__brand {
+		margin-left: var(--sm-space-2);
+		font-size: var(--sm-fs-lg);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-inverse);
+	}
+
+	.devs__line {
+		height: var(--sm-border-hairline);
+		background-color: var(--sm-palette-on-deep-soft);
+		margin-top: var(--sm-space-4);
+		margin-bottom: var(--sm-space-2);
+	}
+
+	.dev {
+		flex-direction: row;
+		align-items: center;
+		margin-top: var(--sm-space-4);
+	}
+
+	.dev__avatar {
+		width: var(--sm-size-avatar-lg);
+		height: var(--sm-size-avatar-lg);
+		border-radius: var(--sm-radius-full);
+		border-width: var(--sm-border-thick);
+		border-style: solid;
+		border-color: var(--sm-palette-on-deep-soft);
+		background-color: var(--sm-color-neutral-800);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.dev__avatar-text {
+		font-size: var(--sm-fs-xl);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-palette-on-deep-muted);
+	}
+
+	.dev__body {
+		flex: 1;
+		flex-direction: column;
+		margin-left: var(--sm-space-3);
+	}
+
+	.dev__name-line {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.dev__name {
+		font-size: var(--sm-fs-lg);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-inverse);
+	}
+
+	.dev__role {
+		margin-left: var(--sm-space-2);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-neutral-800);
+	}
+
+	.dev__role-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-palette-on-deep-muted);
+	}
+
+	.dev__quote {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-palette-on-deep-muted);
+	}
+
+	.meta {
+		flex-direction: row;
+		align-items: flex-start;
+	}
+
+	.meta__label {
+		width: var(--sm-space-12);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.meta__value {
+		flex: 1;
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-primary);
+	}
+
+	.meta__line {
+		height: var(--sm-border-hairline);
+		background-color: var(--sm-color-border-subtle);
+		margin-top: var(--sm-space-3);
+		margin-bottom: var(--sm-space-3);
+	}
+
+	.check {
+		margin-top: var(--sm-space-4);
+	}
+
+	.foot {
+		align-items: center;
+		padding-top: var(--sm-space-6);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.foot__text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

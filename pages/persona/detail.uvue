@@ -1,0 +1,296 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="人设详情" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view v-if="persona == null" class="missing">
+					<sm-empty icon="alert-circle" title="这个人设不在了" desc="可能已经被删除" action="返回" @action="goBack"></sm-empty>
+				</view>
+
+				<view v-else>
+					<view class="hero">
+						<sm-avatar :name="persona!.name" :tone="persona!.tone" size="xl"></sm-avatar>
+						<text class="hero__name">{{ persona!.name.length == 0 ? '未命名' : persona!.name }}</text>
+						<text class="hero__tag">{{ persona!.tagline.length == 0 ? '还没有写介绍' : persona!.tagline }}</text>
+						<view class="hero__chips">
+							<view class="hero__chip"><text class="hero__chip-text">{{ memoryLabel }}</text></view>
+							<view class="hero__chip"><text class="hero__chip-text">{{ persona!.proactive ? '会主动找你' : '不会主动打扰' }}</text></view>
+							<view v-if="persona!.pinned" class="hero__chip"><text class="hero__chip-text">已置顶</text></view>
+						</view>
+						<view class="hero__actions">
+							<view class="hero__action">
+								<sm-button label="开始对话" block icon="message-circle" @tap="startChat"></sm-button>
+							</view>
+							<view class="hero__action">
+								<sm-button label="编辑" block variant="secondary" icon="edit" @tap="goEdit"></sm-button>
+							</view>
+						</view>
+					</view>
+
+					<view class="card">
+						<text class="card__title">关于 Ta</text>
+						<text class="card__text">{{ persona!.soul.length == 0 ? '还没有写人格设定。写下 Ta 是谁、怎么说话、在乎什么，对话会更像 Ta。' : persona!.soul }}</text>
+					</view>
+
+					<view class="card">
+						<text class="card__title">Ta 记得的</text>
+						<text v-if="memories.length == 0" class="card__empty">Ta 还没有记住任何事</text>
+						<view v-else class="memories">
+							<view v-for="item in memories" :key="item.id" class="memory">
+								<view class="memory__dot"></view>
+								<text class="memory__text">{{ item.content }}</text>
+							</view>
+						</view>
+					</view>
+
+					<view class="card">
+						<text class="card__title">你们之间</text>
+						<view class="meta">
+							<text class="meta__label">创建于</text>
+							<text class="meta__value">{{ createdLabel }}</text>
+						</view>
+						<view class="meta">
+							<text class="meta__label">消息</text>
+							<text class="meta__value">{{ messageCount }} 条</text>
+						</view>
+						<view class="meta">
+							<text class="meta__label">记忆</text>
+							<text class="meta__value">{{ memories.length }} 条</text>
+						</view>
+					</view>
+
+					<view class="danger">
+						<sm-button label="删除人设" variant="danger" block icon="trash" @tap="askDelete"></sm-button>
+					</view>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+		<sm-dialog :visible="deleteVisible" title="删除这个人物？" desc="Ta 的会话与记忆会一并删除，且无法恢复。" confirm-label="删除" danger @confirm="confirmDelete" @cancel="deleteVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { findPersona, findSessionByPersona, memoriesOf, deletePersona } from '../../store/app.uts'
+	import { formatDate } from '../../utils/format.uts'
+
+	const personaId = ref('')
+	const deleteVisible = ref(false)
+
+	onLoad((query) => {
+		const q = query as UTSJSONObject | null
+		if (q != null) {
+			const raw = q['id']
+			if (raw != null) personaId.value = `${raw}`
+		}
+	})
+
+	const persona = computed(() => findPersona(personaId.value))
+
+	const memories = computed(() => memoriesOf(personaId.value))
+
+	const messageCount = computed((): number => {
+		const s = findSessionByPersona(personaId.value)
+		return s == null ? 0 : s!.messages.length
+	})
+
+	const memoryLabel = computed((): string => {
+		const p = persona.value
+		if (p == null) return '标准记忆'
+		if (p!.memoryMode == 'strong') return '强化记忆'
+		if (p!.memoryMode == 'off') return '不写记忆'
+		return '标准记忆'
+	})
+
+	const createdLabel = computed((): string => {
+		const p = persona.value
+		return p == null ? '—' : formatDate(p!.createdAt)
+	})
+
+	const startChat = (): void => {
+		uni.navigateTo({ url: `/pages/chat/chat?personaId=${personaId.value}` })
+	}
+
+	const goEdit = (): void => {
+		uni.navigateTo({ url: `/pages/persona/edit?id=${personaId.value}` })
+	}
+
+	const askDelete = (): void => {
+		deleteVisible.value = true
+	}
+
+	const confirmDelete = (): void => {
+		deletePersona(personaId.value)
+		deleteVisible.value = false
+		uni.navigateBack()
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.missing {
+		padding-top: var(--sm-space-10);
+	}
+
+	.hero {
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-xl);
+		padding-top: var(--sm-space-6);
+		padding-bottom: var(--sm-space-5);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.hero__name {
+		margin-top: var(--sm-space-3);
+		font-size: var(--sm-fs-2xl);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.hero__tag {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		text-align: center;
+	}
+
+	.hero__chips {
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-top: var(--sm-space-3);
+	}
+
+	.hero__chip {
+		margin-left: var(--sm-space-1);
+		margin-right: var(--sm-space-1);
+		margin-top: var(--sm-space-1);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.hero__chip-text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-brand-800);
+	}
+
+	.hero__actions {
+		flex-direction: row;
+		width: 100%;
+		margin-top: var(--sm-space-5);
+	}
+
+	.hero__action {
+		flex: 1;
+		margin-left: var(--sm-space-1);
+		margin-right: var(--sm-space-1);
+	}
+
+	.card {
+		margin-top: var(--sm-space-3);
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.card__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.card__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-relaxed);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.card__empty {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.memories {
+		flex-direction: column;
+		margin-top: var(--sm-space-2);
+	}
+
+	.memory {
+		flex-direction: row;
+		align-items: flex-start;
+		margin-top: var(--sm-space-2);
+	}
+
+	.memory__dot {
+		width: var(--sm-space-2);
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-accent-500);
+		margin-top: var(--sm-space-2);
+	}
+
+	.memory__text {
+		flex: 1;
+		margin-left: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.meta {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		margin-top: var(--sm-space-2);
+	}
+
+	.meta__label {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.meta__value {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-primary);
+	}
+
+	.danger {
+		margin-top: var(--sm-space-6);
+	}
+</style>

@@ -1,0 +1,107 @@
+<template>
+	<view class="sm-card" :class="[toneClass, padClass, shadowClass]">
+		<slot></slot>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		tone?: string
+		pad?: string
+		shadow?: string
+	}>(), {
+		tone: 'surface',
+		pad: 'md',
+		shadow: 'sm'
+	})
+
+	const toneClass = computed((): string => {
+		if (props.tone == 'sunken') return 'sm-card--sunken'
+		if (props.tone == 'brand') return 'sm-card--brand'
+		if (props.tone == 'deep') return 'sm-card--deep'
+		if (props.tone == 'plain') return 'sm-card--plain'
+		return 'sm-card--surface'
+	})
+
+	const padClass = computed((): string => {
+		if (props.pad == 'none') return 'sm-card--pad-none'
+		if (props.pad == 'sm') return 'sm-card--pad-sm'
+		if (props.pad == 'lg') return 'sm-card--pad-lg'
+		return 'sm-card--pad-md'
+	})
+
+	const shadowClass = computed((): string => {
+		if (props.shadow == 'none') return 'sm-card--shadow-none'
+		if (props.shadow == 'md') return 'sm-card--shadow-md'
+		return 'sm-card--shadow-sm'
+	})
+</script>
+
+<style>
+	.sm-card {
+		flex-direction: column;
+		border-radius: var(--sm-radius-lg);
+	}
+
+	.sm-card--surface {
+		background-color: var(--sm-color-bg-surface);
+	}
+
+	.sm-card--sunken {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.sm-card--brand {
+		background-color: var(--sm-color-brand-500);
+	}
+
+	.sm-card--deep {
+		background-color: var(--sm-color-neutral-900);
+	}
+
+	.sm-card--plain {
+		background-color: transparent;
+	}
+
+	.sm-card--pad-none {
+		padding-left: 0;
+		padding-right: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+	}
+
+	.sm-card--pad-sm {
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+	}
+
+	.sm-card--pad-md {
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+	}
+
+	.sm-card--pad-lg {
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+		padding-top: var(--sm-space-5);
+		padding-bottom: var(--sm-space-5);
+	}
+
+	.sm-card--shadow-none {
+		box-shadow: none;
+	}
+
+	.sm-card--shadow-sm {
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.sm-card--shadow-md {
+		box-shadow: var(--sm-shadow-md);
+	}
+</style>

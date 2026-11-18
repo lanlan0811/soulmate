@@ -1,0 +1,252 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="模型连接" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<view class="current">
+					<view class="current__icon">
+						<sm-icon :name="configured ? 'check-circle' : 'server'" :variant="configured ? 'brand' : 'muted'" size="lg"></sm-icon>
+					</view>
+					<view class="current__body">
+						<text class="current__title">{{ configured ? (model.length == 0 ? '自定义模型' : model) : '还没有配置模型' }}</text>
+						<text class="current__desc">{{ configured ? '配置只保存在本机，不会随备份之外的途径外传' : '填入地址、密钥与模型名后即可保存' }}</text>
+					</view>
+				</view>
+
+				<view class="form">
+					<view class="field">
+						<sm-field v-model="endpoint" label="接口地址" placeholder="https://example.com/v1" :maxlength="200"></sm-field>
+					</view>
+					<view class="field">
+						<sm-field v-model="apiKey" label="API Key" placeholder="sk-…" :maxlength="200" :password="true"></sm-field>
+					</view>
+					<view class="field">
+						<sm-field v-model="model" label="模型名" placeholder="填写服务商提供的模型标识" :maxlength="80"></sm-field>
+					</view>
+
+					<view class="temp">
+						<text class="temp__label">温度</text>
+						<view class="temp__chips">
+							<view v-for="item in tempOptions" :key="item" class="temp__chip" :class="temperature == item ? 'temp__chip--active' : ''" @click="temperature = item">
+								<text class="temp__chip-text" :class="temperature == item ? 'temp__chip-text--active' : ''">{{ (item / 10).toFixed(1) }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+
+				<view class="actions">
+					<sm-button label="保存配置" block size="lg" @tap="save"></sm-button>
+					<view class="actions__row">
+						<view class="actions__item">
+							<sm-button label="测试连接" variant="secondary" block @tap="test"></sm-button>
+						</view>
+						<view class="actions__item">
+							<sm-button label="清除配置" variant="ghost" block @tap="askClear"></sm-button>
+						</view>
+					</view>
+				</view>
+
+				<view class="note">
+					<text class="note__text">当前版本不会发起任何网络请求。「测试连接」只会提示本地预览状态，不会校验真实服务。</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+		<sm-dialog :visible="clearVisible" title="清除模型配置？" desc="地址、密钥与模型名都会从本机删除。" confirm-label="清除" danger @confirm="confirmClear" @cancel="clearVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state, saveModelConfig } from '../../store/app.uts'
+
+	const endpoint = ref('')
+	const apiKey = ref('')
+	const model = ref('')
+	const temperature = ref(7)
+	const clearVisible = ref(false)
+	const tempOptions = [0, 3, 5, 7, 9]
+
+	onLoad(() => {
+		endpoint.value = state.modelConfig.endpoint
+		apiKey.value = state.modelConfig.apiKey
+		model.value = state.modelConfig.model
+		temperature.value = state.modelConfig.temperature
+	})
+
+	const configured = computed((): boolean => state.modelConfig.configured)
+
+	const save = (): void => {
+		const ok = endpoint.value.trim().length > 0 && model.value.trim().length > 0
+		saveModelConfig({
+			endpoint: endpoint.value.trim(),
+			apiKey: apiKey.value,
+			model: model.value.trim(),
+			temperature: temperature.value,
+			configured: ok
+		})
+		uni.showToast({ title: ok ? '已保存' : '地址与模型名需要填写', position: 'bottom' })
+		if (ok) uni.navigateBack()
+	}
+
+	const test = (): void => {
+		uni.showToast({ title: '本地预览：不会发起网络请求', position: 'bottom' })
+	}
+
+	const askClear = (): void => {
+		clearVisible.value = true
+	}
+
+	const confirmClear = (): void => {
+		saveModelConfig({ endpoint: '', apiKey: '', model: '', temperature: 7, configured: false })
+		endpoint.value = ''
+		apiKey.value = ''
+		model.value = ''
+		temperature.value = 7
+		clearVisible.value = false
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.current {
+		flex-direction: row;
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.current__icon {
+		width: var(--sm-size-avatar-md);
+		height: var(--sm-size-avatar-md);
+		border-radius: var(--sm-radius-md);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.current__body {
+		flex: 1;
+		flex-direction: column;
+		margin-left: var(--sm-space-3);
+	}
+
+	.current__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.current__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+
+	.form {
+		flex-direction: column;
+		margin-top: var(--sm-space-4);
+	}
+
+	.field {
+		margin-bottom: var(--sm-space-4);
+	}
+
+	.temp {
+		flex-direction: column;
+	}
+
+	.temp__label {
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.temp__chips {
+		flex-direction: row;
+		margin-top: var(--sm-space-2);
+	}
+
+	.temp__chip {
+		flex: 1;
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-surface);
+		align-items: center;
+		justify-content: center;
+		margin-right: var(--sm-space-1);
+		border-width: var(--sm-border-hairline);
+		border-style: solid;
+		border-color: var(--sm-color-border-default);
+	}
+
+	.temp__chip--active {
+		background-color: var(--sm-color-action-primary);
+		border-color: var(--sm-color-action-primary);
+	}
+
+	.temp__chip-text {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-secondary);
+	}
+
+	.temp__chip-text--active {
+		color: var(--sm-color-action-primary-text);
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.actions {
+		margin-top: var(--sm-space-4);
+	}
+
+	.actions__row {
+		flex-direction: row;
+		margin-top: var(--sm-space-2);
+	}
+
+	.actions__item {
+		flex: 1;
+		margin-left: var(--sm-space-1);
+		margin-right: var(--sm-space-1);
+	}
+
+	.note {
+		margin-top: var(--sm-space-4);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+	}
+
+	.note__text {
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-relaxed);
+		color: var(--sm-color-text-muted);
+	}
+</style>

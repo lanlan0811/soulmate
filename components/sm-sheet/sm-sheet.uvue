@@ -1,0 +1,103 @@
+<template>
+	<view v-if="visible" class="sm-sheet-mask" @click="onMaskClick">
+		<view class="sm-sheet" :class="heightClass" @click.stop="noop">
+			<view class="sm-sheet__handle"></view>
+			<text v-if="title.length > 0" class="sm-sheet__title">{{ title }}</text>
+			<text v-if="desc.length > 0" class="sm-sheet__desc">{{ desc }}</text>
+			<slot></slot>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		visible?: boolean
+		title?: string
+		desc?: string
+		size?: string
+		dismissible?: boolean
+	}>(), {
+		visible: false,
+		title: '',
+		desc: '',
+		size: 'auto',
+		dismissible: true
+	})
+
+	const emit = defineEmits(['close'])
+
+	const heightClass = computed((): string => {
+		if (props.size == 'half') return 'sm-sheet--half'
+		if (props.size == 'full') return 'sm-sheet--full'
+		return 'sm-sheet--auto'
+	})
+
+	const onMaskClick = (): void => {
+		if (props.dismissible) emit('close')
+	}
+
+	const noop = (): void => {
+	}
+</script>
+
+<style>
+	.sm-sheet-mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: var(--sm-color-neutral-950);
+		opacity: 0.55;
+		z-index: 200;
+		justify-content: flex-end;
+	}
+
+	.sm-sheet {
+		background-color: var(--sm-color-bg-surface);
+		border-top-left-radius: var(--sm-radius-xl);
+		border-top-right-radius: var(--sm-radius-xl);
+		padding-left: var(--sm-space-5);
+		padding-right: var(--sm-space-5);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-6);
+		flex-direction: column;
+	}
+
+	.sm-sheet--auto {
+		max-height: 80%;
+	}
+
+	.sm-sheet--half {
+		height: 50%;
+	}
+
+	.sm-sheet--full {
+		height: 86%;
+	}
+
+	.sm-sheet__handle {
+		width: var(--sm-space-10);
+		height: var(--sm-space-1);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-border-strong);
+		align-self: center;
+		margin-bottom: var(--sm-space-3);
+	}
+
+	.sm-sheet__title {
+		font-size: var(--sm-fs-lg);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+		text-align: center;
+	}
+
+	.sm-sheet__desc {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		text-align: center;
+	}
+</style>

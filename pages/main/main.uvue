@@ -1,0 +1,99 @@
+<template>
+	<view class="sm-screen">
+		<view class="sm-statusbar"></view>
+
+		<view class="tabbar-host">
+			<app-messages v-if="tab == 0" @openChat="openChatWithPersona" @openSession="openChatWithSession" @createPersona="goCreatePersona"></app-messages>
+			<app-personas v-else-if="tab == 1" @create="goCreatePersona" @openPersona="goPersonaDetail" @editPersona="goEditPersona" @editProfile="goEditProfile" @openChat="openChatWithPersona"></app-personas>
+			<app-profile v-else-if="tab == 2" @editProfile="goEditProfile" @goSettings="goSettings" @goDashboard="goDashboard" @goBackup="goBackup" @goFeedback="goFeedback"></app-profile>
+			<app-about v-else></app-about>
+		</view>
+
+		<sm-tab-bar :current="tab" :unread="unreadTotal" @change="onTabChange"></sm-tab-bar>
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { ref } from 'vue'
+	import { totalUnread, load } from '../../store/app.uts'
+
+	const tab = ref(0)
+	const unreadTotal = ref(0)
+
+	onLoad((query) => {
+		load()
+		const q = query as UTSJSONObject | null
+		if (q != null) {
+			const raw = q['tab']
+			if (raw != null) {
+				const value = `${raw}`
+				if (value == '1') tab.value = 1
+				else if (value == '2') tab.value = 2
+				else if (value == '3') tab.value = 3
+				else tab.value = 0
+			}
+		}
+		syncUnread()
+	})
+
+	onShow(() => {
+		syncUnread()
+	})
+
+	const syncUnread = (): void => {
+		unreadTotal.value = totalUnread()
+	}
+
+	const onTabChange = (index: number): void => {
+		tab.value = index
+		syncUnread()
+	}
+
+	const goCreatePersona = (): void => {
+		uni.navigateTo({ url: '/pages/persona/edit?mode=create' })
+	}
+
+	const goEditPersona = (personaId: string): void => {
+		uni.navigateTo({ url: `/pages/persona/edit?id=${personaId}` })
+	}
+
+	const goPersonaDetail = (personaId: string): void => {
+		uni.navigateTo({ url: `/pages/persona/detail?id=${personaId}` })
+	}
+
+	const openChatWithPersona = (personaId: string): void => {
+		uni.navigateTo({ url: `/pages/chat/chat?personaId=${personaId}` })
+	}
+
+	const openChatWithSession = (sessionId: string): void => {
+		uni.navigateTo({ url: `/pages/chat/chat?sessionId=${sessionId}` })
+	}
+
+	const goEditProfile = (): void => {
+		uni.navigateTo({ url: '/pages/profile/edit' })
+	}
+
+	const goSettings = (): void => {
+		uni.navigateTo({ url: '/pages/settings/index' })
+	}
+
+	const goDashboard = (): void => {
+		uni.navigateTo({ url: '/pages/dashboard/dashboard' })
+	}
+
+	const goBackup = (): void => {
+		uni.navigateTo({ url: '/pages/backup/backup' })
+	}
+
+	const goFeedback = (): void => {
+		uni.navigateTo({ url: '/pages/feedback/feedback' })
+	}
+</script>
+
+<style>
+	.tabbar-host {
+		flex: 1;
+		flex-direction: column;
+	}
+</style>

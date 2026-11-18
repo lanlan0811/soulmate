@@ -1,0 +1,85 @@
+<template>
+	<view class="sm-icon-wrap" :class="sizeClass">
+		<image class="sm-icon-img" :class="imgSizeClass" :src="src" mode="aspectFit"></image>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		name: string
+		variant?: string
+		size?: string
+	}>(), {
+		variant: 'ink',
+		size: 'md'
+	})
+
+	const src = computed((): string => {
+		return `/static/icons/${props.variant}/${props.name}.svg`
+	})
+
+	const sizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-icon--sm'
+		if (props.size == 'lg') return 'sm-icon--lg'
+		if (props.size == 'xl') return 'sm-icon--xl'
+		return 'sm-icon--md'
+	})
+
+	const imgSizeClass = computed((): string => {
+		if (props.size == 'sm') return 'sm-icon-img--sm'
+		if (props.size == 'lg') return 'sm-icon-img--lg'
+		if (props.size == 'xl') return 'sm-icon-img--xl'
+		return 'sm-icon-img--md'
+	})
+</script>
+
+<style>
+	.sm-icon-wrap {
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.sm-icon--sm {
+		width: var(--sm-size-icon-sm);
+		height: var(--sm-size-icon-sm);
+	}
+
+	.sm-icon--md {
+		width: var(--sm-size-icon-md);
+		height: var(--sm-size-icon-md);
+	}
+
+	.sm-icon--lg {
+		width: var(--sm-size-icon-lg);
+		height: var(--sm-size-icon-lg);
+	}
+
+	.sm-icon--xl {
+		width: var(--sm-size-icon-xl);
+		height: var(--sm-size-icon-xl);
+	}
+
+	.sm-icon-img--sm {
+		width: var(--sm-size-icon-sm);
+		height: var(--sm-size-icon-sm);
+	}
+
+	.sm-icon-img--md {
+		width: var(--sm-size-icon-md);
+		height: var(--sm-size-icon-md);
+	}
+
+	.sm-icon-img--lg {
+		width: var(--sm-size-icon-lg);
+		height: var(--sm-size-icon-lg);
+	}
+
+	.sm-icon-img--xl {
+		width: var(--sm-size-icon-xl);
+		height: var(--sm-size-icon-xl);
+	}
+</style>

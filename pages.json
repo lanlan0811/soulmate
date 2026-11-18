@@ -1,17 +1,94 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://doc.dcloud.net.cn/uni-app-x/collocation/pagesjson.html
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^sm-(.*)": "@/components/sm-$1/sm-$1.uvue"
+		}
+	},
+	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/main/main",
 			"style": {
-				"navigationBarTitleText": "uni-app x"
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "心契"
+			}
+		},
+		{
+			"path": "pages/chat/chat",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "对话"
+			}
+		},
+		{
+			"path": "pages/persona/edit",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "人设"
+			}
+		},
+		{
+			"path": "pages/persona/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "人设详情"
+			}
+		},
+		{
+			"path": "pages/profile/edit",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "我的资料"
+			}
+		},
+		{
+			"path": "pages/settings/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "设置"
+			}
+		},
+		{
+			"path": "pages/settings/connect",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "模型连接"
+			}
+		},
+		{
+			"path": "pages/settings/features",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "功能与外观"
+			}
+		},
+		{
+			"path": "pages/dashboard/dashboard",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "看板"
+			}
+		},
+		{
+			"path": "pages/backup/backup",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "数据备份"
+			}
+		},
+		{
+			"path": "pages/feedback/feedback",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "说什么"
 			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app x",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
-	},
-	"uniIdRouter": {}
+		"navigationBarTitleText": "心契",
+		"navigationBarBackgroundColor": "#F5F0FF",
+		"backgroundColor": "#F5F0FF",
+		"backgroundColorContent": "#F5F0FF"
+	}
 }

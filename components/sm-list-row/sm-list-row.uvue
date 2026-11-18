@@ -1,0 +1,145 @@
+<template>
+	<view class="sm-row" :class="[last ? 'sm-row--last' : '', danger ? 'sm-row--danger' : '']" :hover-class="clickable ? 'sm-row--pressed' : 'none'" @click="onTap">
+		<view v-if="icon.length > 0" class="sm-row__icon" :class="iconBgClass">
+			<sm-icon :name="icon" :variant="danger ? 'danger' : 'brand'" size="md"></sm-icon>
+		</view>
+		<view class="sm-row__body">
+			<view class="sm-row__line">
+				<text class="sm-row__title" :class="danger ? 'sm-row__title--danger' : ''">{{ title }}</text>
+				<text v-if="value.length > 0" class="sm-row__value">{{ value }}</text>
+			</view>
+			<text v-if="desc.length > 0" class="sm-row__desc">{{ desc }}</text>
+		</view>
+		<view v-if="arrow" class="sm-row__arrow">
+			<sm-icon name="chevron-right" variant="muted" size="sm"></sm-icon>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		title?: string
+		desc?: string
+		value?: string
+		icon?: string
+		arrow?: boolean
+		last?: boolean
+		danger?: boolean
+		clickable?: boolean
+		iconTone?: string
+	}>(), {
+		title: '',
+		desc: '',
+		value: '',
+		icon: '',
+		arrow: true,
+		last: false,
+		danger: false,
+		clickable: true,
+		iconTone: 'soft'
+	})
+
+	const emit = defineEmits(['tap'])
+
+	const iconBgClass = computed((): string => {
+		if (props.danger) return 'sm-row__icon--danger'
+		if (props.iconTone == 'sunken') return 'sm-row__icon--sunken'
+		if (props.iconTone == 'accent') return 'sm-row__icon--accent'
+		return 'sm-row__icon--soft'
+	})
+
+	const onTap = (): void => {
+		if (!props.clickable) return
+		emit('tap')
+	}
+</script>
+
+<style>
+	.sm-row {
+		flex-direction: row;
+		align-items: center;
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		background-color: var(--sm-color-bg-surface);
+	}
+
+	.sm-row--last {
+		border-bottom-width: 0;
+	}
+
+	.sm-row--pressed {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.sm-row__icon {
+		width: var(--sm-size-avatar-md);
+		height: var(--sm-size-avatar-md);
+		border-radius: var(--sm-radius-md);
+		align-items: center;
+		justify-content: center;
+		margin-right: var(--sm-space-3);
+		flex-shrink: 0;
+	}
+
+	.sm-row__icon--soft {
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.sm-row__icon--sunken {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.sm-row__icon--accent {
+		background-color: var(--sm-color-accent-100);
+	}
+
+	.sm-row__icon--danger {
+		background-color: var(--sm-color-danger-50);
+	}
+
+	.sm-row__body {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.sm-row__line {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.sm-row__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-primary);
+		flex-shrink: 1;
+	}
+
+	.sm-row__title--danger {
+		color: var(--sm-color-action-danger);
+	}
+
+	.sm-row__value {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		margin-left: var(--sm-space-2);
+		flex-shrink: 0;
+	}
+
+	.sm-row__desc {
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		margin-top: var(--sm-space-1);
+		line-height: var(--sm-lh-normal);
+	}
+
+	.sm-row__arrow {
+		margin-left: var(--sm-space-2);
+		flex-direction: row;
+		align-items: center;
+	}
+</style>

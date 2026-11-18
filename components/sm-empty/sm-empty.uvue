@@ -1,0 +1,75 @@
+<template>
+	<view class="sm-empty">
+		<view class="sm-empty__icon">
+			<sm-icon :name="icon" variant="soft" size="lg"></sm-icon>
+		</view>
+		<text class="sm-empty__title">{{ title }}</text>
+		<text v-if="desc.length > 0" class="sm-empty__desc">{{ desc }}</text>
+		<view v-if="action.length > 0" class="sm-empty__action">
+			<sm-button :label="action" size="sm" variant="soft" :icon="actionIcon" @tap="onAction"></sm-button>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	const props = withDefaults(defineProps<{
+		icon?: string
+		title?: string
+		desc?: string
+		action?: string
+		actionIcon?: string
+	}>(), {
+		icon: 'sparkles',
+		title: '',
+		desc: '',
+		action: '',
+		actionIcon: ''
+	})
+
+	const emit = defineEmits(['action'])
+
+	const onAction = (): void => {
+		emit('action')
+	}
+</script>
+
+<style>
+	.sm-empty {
+		align-items: center;
+		justify-content: center;
+		padding-left: var(--sm-space-6);
+		padding-right: var(--sm-space-6);
+		padding-top: var(--sm-space-12);
+		padding-bottom: var(--sm-space-12);
+	}
+
+	.sm-empty__icon {
+		width: var(--sm-size-avatar-lg);
+		height: var(--sm-size-avatar-lg);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sm-empty__title {
+		margin-top: var(--sm-space-4);
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+		text-align: center;
+	}
+
+	.sm-empty__desc {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		text-align: center;
+		line-height: var(--sm-lh-normal);
+	}
+
+	.sm-empty__action {
+		margin-top: var(--sm-space-5);
+		flex-direction: row;
+	}
+</style>

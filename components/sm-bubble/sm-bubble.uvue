@@ -1,0 +1,179 @@
+<template>
+	<view class="sm-msg" :class="isUser ? 'sm-msg--out' : 'sm-msg--in'">
+		<view v-if="!isUser" class="sm-msg__avatar">
+			<sm-avatar :name="name" :tone="tone" size="md"></sm-avatar>
+		</view>
+		<view class="sm-msg__main" :class="isUser ? 'sm-msg__main--out' : 'sm-msg__main--in'">
+			<text v-if="proactive && !isUser" class="sm-msg__proactive">Ta 主动找你</text>
+			<view class="sm-msg__bubble" :class="isUser ? 'sm-msg__bubble--out' : 'sm-msg__bubble--in'" @longpress="onLongPress">
+				<view v-if="thinking.length > 0" class="sm-msg__think" :class="thinkingOpen ? 'sm-msg__think--open' : ''">
+					<view class="sm-msg__think-head" @click="onToggleThink">
+						<sm-icon name="sparkles" variant="muted" size="sm"></sm-icon>
+						<text class="sm-msg__think-label">思考过程</text>
+						<sm-icon :name="thinkingOpen ? 'chevron-up' : 'chevron-down'" variant="muted" size="sm"></sm-icon>
+					</view>
+					<text v-if="thinkingOpen" class="sm-msg__think-text">{{ thinking }}</text>
+				</view>
+				<text class="sm-msg__text" :class="isUser ? 'sm-msg__text--out' : 'sm-msg__text--in'">{{ text }}</text>
+			</view>
+			<text v-if="time.length > 0" class="sm-msg__time" :class="isUser ? 'sm-msg__time--out' : 'sm-msg__time--in'">{{ time }}</text>
+		</view>
+		<view v-if="isUser" class="sm-msg__avatar">
+			<sm-avatar :name="userName" :tone="userTone" size="md"></sm-avatar>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		role?: string
+		text?: string
+		time?: string
+		thinking?: string
+		proactive?: boolean
+		name?: string
+		tone?: number
+		userName?: string
+		userTone?: number
+		collapsed?: boolean
+	}>(), {
+		role: 'assistant',
+		text: '',
+		time: '',
+		thinking: '',
+		proactive: false,
+		name: '',
+		tone: 0,
+		userName: '',
+		userTone: 0,
+		collapsed: true
+	})
+
+	const emit = defineEmits(['longpress'])
+
+	const isUser = computed((): boolean => props.role == 'user')
+	const thinkingOpen = ref(!props.collapsed)
+
+	const onToggleThink = (): void => {
+		thinkingOpen.value = !thinkingOpen.value
+	}
+
+	const onLongPress = (): void => {
+		emit('longpress')
+	}
+</script>
+
+<style>
+	.sm-msg {
+		flex-direction: row;
+		align-items: flex-start;
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+	}
+
+	.sm-msg--in {
+		justify-content: flex-start;
+	}
+
+	.sm-msg--out {
+		justify-content: flex-end;
+	}
+
+	.sm-msg__avatar {
+		margin-left: var(--sm-space-1);
+		margin-right: var(--sm-space-1);
+	}
+
+	.sm-msg__main {
+		flex-direction: column;
+		max-width: var(--sm-size-bubble-max);
+	}
+
+	.sm-msg__main--out {
+		align-items: flex-end;
+	}
+
+	.sm-msg__main--in {
+		align-items: flex-start;
+	}
+
+	.sm-msg__proactive {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+		margin-bottom: var(--sm-space-1);
+		margin-left: var(--sm-space-2);
+	}
+
+	.sm-msg__bubble {
+		flex-direction: column;
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		border-radius: var(--sm-radius-lg);
+	}
+
+	.sm-msg__bubble--in {
+		background-color: var(--sm-color-bg-surface);
+		border-top-left-radius: var(--sm-radius-xs);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.sm-msg__bubble--out {
+		background-color: var(--sm-color-brand-100);
+		border-top-right-radius: var(--sm-radius-xs);
+	}
+
+	.sm-msg__text {
+		font-size: var(--sm-fs-md);
+		line-height: var(--sm-lh-normal);
+	}
+
+	.sm-msg__text--in {
+		color: var(--sm-color-text-primary);
+	}
+
+	.sm-msg__text--out {
+		color: var(--sm-color-text-primary);
+	}
+
+	.sm-msg__time {
+		margin-top: var(--sm-space-1);
+		margin-left: var(--sm-space-2);
+		margin-right: var(--sm-space-2);
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.sm-msg__think {
+		background-color: var(--sm-color-bg-sunken);
+		border-radius: var(--sm-radius-md);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+		margin-bottom: var(--sm-space-2);
+	}
+
+	.sm-msg__think-head {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.sm-msg__think-label {
+		flex: 1;
+		margin-left: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-muted);
+	}
+
+	.sm-msg__think-text {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-muted);
+	}
+</style>

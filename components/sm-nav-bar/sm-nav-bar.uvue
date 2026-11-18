@@ -1,0 +1,104 @@
+<template>
+	<view class="sm-nav-host">
+		<view class="sm-statusbar"></view>
+		<view class="sm-nav">
+			<view class="sm-nav__left">
+				<view v-if="showBack" class="sm-nav__back" :hover-class="'sm-nav__back--pressed'" @click="onBack">
+					<sm-icon name="arrow-left" variant="ink" size="md"></sm-icon>
+				</view>
+			</view>
+			<text class="sm-nav__title" :class="titleClass">{{ title }}</text>
+			<view class="sm-nav__right">
+				<slot name="right"></slot>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		title?: string
+		showBack?: boolean
+		large?: boolean
+	}>(), {
+		title: '',
+		showBack: true,
+		large: false
+	})
+
+	const emit = defineEmits(['back'])
+
+	const titleClass = computed((): string => (props.large ? 'sm-nav__title--large' : 'sm-nav__title--md'))
+
+	const onBack = (): void => {
+		if (!props.showBack) return
+		emit('back')
+	}
+</script>
+
+<style>
+	.sm-nav-host {
+		flex-direction: column;
+		flex-shrink: 0;
+	}
+
+	.sm-statusbar {
+		height: var(--status-bar-height);
+		flex-shrink: 0;
+	}
+
+	.sm-nav {
+		height: var(--sm-size-nav-bar);
+		flex-direction: row;
+		align-items: center;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		flex-shrink: 0;
+	}
+
+	.sm-nav__left {
+		width: var(--sm-size-control-md);
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.sm-nav__back {
+		width: var(--sm-size-control-md);
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-surface);
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.sm-nav__back--pressed {
+		opacity: 0.7;
+	}
+
+	.sm-nav__title {
+		flex: 1;
+		text-align: center;
+		color: var(--sm-color-text-primary);
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.sm-nav__title--md {
+		font-size: var(--sm-fs-md);
+	}
+
+	.sm-nav__title--large {
+		font-size: var(--sm-fs-display);
+		font-weight: var(--sm-weight-bold);
+		letter-spacing: var(--sm-tracking-tight);
+	}
+
+	.sm-nav__right {
+		min-width: var(--sm-size-control-md);
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+</style>

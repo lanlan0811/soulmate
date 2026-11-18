@@ -1,0 +1,554 @@
+/**
+ * 本地状态：冷启动全空，用户自行创建的内容写入本机。
+ * 无 seed 数据、无网络请求、无假会话 / 假人设 / 假记忆。
+ */
+import { reactive } from 'vue'
+
+const STORAGE_KEY = 'sm.state.v1'
+
+export type Persona = {
+	id: string
+	name: string
+	tagline: string
+	soul: string
+	greeting: string
+	tone: number
+	pinned: boolean
+	proactive: boolean
+	memoryMode: string
+	createdAt: number
+}
+
+export type Message = {
+	id: string
+	role: string
+	text: string
+	thinking: string
+	createdAt: number
+	proactive: boolean
+}
+
+export type Session = {
+	id: string
+	personaId: string
+	messages: Message[]
+	updatedAt: number
+	unread: number
+	pinned: boolean
+	muted: boolean
+	draft: string
+}
+
+export type Memory = {
+	id: string
+	personaId: string
+	content: string
+	category: string
+	importance: number
+	createdAt: number
+}
+
+export type Feedback = {
+	id: string
+	kind: string
+	content: string
+	contact: string
+	createdAt: number
+}
+
+export type UserProfile = {
+	nickname: string
+	bio: string
+	tone: number
+}
+
+export type Settings = {
+	proactive: boolean
+	thinkingCollapsed: boolean
+	segmentBubble: boolean
+	enterToSend: boolean
+	motion: boolean
+	fontSize: string
+	autoBackup: boolean
+}
+
+export type ModelConfig = {
+	endpoint: string
+	apiKey: string
+	model: string
+	temperature: number
+	configured: boolean
+}
+
+export type AppState = {
+	personas: Persona[]
+	sessions: Session[]
+	memories: Memory[]
+	feedbacks: Feedback[]
+	profile: UserProfile
+	settings: Settings
+	modelConfig: ModelConfig
+}
+
+export type StateSnapshot = {
+	version: number
+	personas: Persona[]
+	sessions: Session[]
+	memories: Memory[]
+	feedbacks: Feedback[]
+	profile: UserProfile
+	settings: Settings
+	modelConfig: ModelConfig
+}
+
+function emptyProfile(): UserProfile {
+	return { nickname: '', bio: '', tone: 0 } as UserProfile
+}
+
+function emptySettings(): Settings {
+	return {
+		proactive: true,
+		thinkingCollapsed: true,
+		segmentBubble: true,
+		enterToSend: false,
+		motion: true,
+		fontSize: 'md',
+		autoBackup: false
+	} as Settings
+}
+
+function emptyModelConfig(): ModelConfig {
+	return { endpoint: '', apiKey: '', model: '', temperature: 7, configured: false } as ModelConfig
+}
+
+function emptyState(): AppState {
+	return {
+		personas: [] as Persona[],
+		sessions: [] as Session[],
+		memories: [] as Memory[],
+		feedbacks: [] as Feedback[],
+		profile: emptyProfile(),
+		settings: emptySettings(),
+		modelConfig: emptyModelConfig()
+	} as AppState
+}
+
+export const state = reactive<AppState>(emptyState())
+
+let seq = 0
+function nextId(prefix: string): string {
+	seq = seq + 1
+	return `${prefix}_${Date.now()}_${seq}`
+}
+
+/* ------------------------------ 持久化 ------------------------------ */
+
+export function buildSnapshot(): StateSnapshot {
+	return {
+		version: 1,
+		personas: state.personas,
+		sessions: state.sessions,
+		memories: state.memories,
+		feedbacks: state.feedbacks,
+		profile: state.profile,
+		settings: state.settings,
+		modelConfig: state.modelConfig
+	} as StateSnapshot
+}
+
+export function exportJson(): string {
+	return JSON.stringify(buildSnapshot())
+}
+
+export function persist(): void {
+	try {
+		uni.setStorageSync(STORAGE_KEY, JSON.stringify(buildSnapshot()))
+	} catch (err) {
+		console.error('persist failed', err)
+	}
+}
+
+export function load(): void {
+	try {
+		const raw = uni.getStorageSync(STORAGE_KEY)
+		if (raw == null) return
+		const text = raw as string
+		if (text.length == 0) return
+		restoreFromJson(text)
+	} catch (err) {
+		console.error('load failed', err)
+	}
+}
+
+/** 导入用：解析失败返回 false，不破坏当前状态。 */
+export function restoreFromJson(text: string): boolean {
+	let snapshot: StateSnapshot | null = null
+	try {
+		snapshot = JSON.parse<StateSnapshot>(text)
+	} catch (err) {
+		return false
+	}
+	if (snapshot == null) return false
+	const s = snapshot!
+	if (s.personas == null || s.sessions == null) return false
+
+	state.personas.length = 0
+	state.sessions.length = 0
+	state.memories.length = 0
+	state.feedbacks.length = 0
+	for (let i = 0; i < s.personas.length; i++) state.personas.push(s.personas[i])
+	for (let i = 0; i < s.sessions.length; i++) state.sessions.push(s.sessions[i])
+	if (s.memories != null) for (let i = 0; i < s.memories.length; i++) state.memories.push(s.memories[i])
+	if (s.feedbacks != null) for (let i = 0; i < s.feedbacks.length; i++) state.feedbacks.push(s.feedbacks[i])
+	if (s.profile != null) {
+		state.profile.nickname = s.profile.nickname
+		state.profile.bio = s.profile.bio
+		state.profile.tone = s.profile.tone
+	}
+	if (s.settings != null) {
+		state.settings.proactive = s.settings.proactive
+		state.settings.thinkingCollapsed = s.settings.thinkingCollapsed
+		state.settings.segmentBubble = s.settings.segmentBubble
+		state.settings.enterToSend = s.settings.enterToSend
+		state.settings.motion = s.settings.motion
+		state.settings.fontSize = s.settings.fontSize
+		state.settings.autoBackup = s.settings.autoBackup
+	}
+	if (s.modelConfig != null) {
+		state.modelConfig.endpoint = s.modelConfig.endpoint
+		state.modelConfig.apiKey = s.modelConfig.apiKey
+		state.modelConfig.model = s.modelConfig.model
+		state.modelConfig.temperature = s.modelConfig.temperature
+		state.modelConfig.configured = s.modelConfig.configured
+	}
+	persist()
+	return true
+}
+
+export function clearAllData(): void {
+	state.personas.length = 0
+	state.sessions.length = 0
+	state.memories.length = 0
+	state.feedbacks.length = 0
+	state.profile.nickname = ''
+	state.profile.bio = ''
+	state.profile.tone = 0
+	state.settings.proactive = true
+	state.settings.thinkingCollapsed = true
+	state.settings.segmentBubble = true
+	state.settings.enterToSend = false
+	state.settings.motion = true
+	state.settings.fontSize = 'md'
+	state.settings.autoBackup = false
+	state.modelConfig.endpoint = ''
+	state.modelConfig.apiKey = ''
+	state.modelConfig.model = ''
+	state.modelConfig.temperature = 7
+	state.modelConfig.configured = false
+	try {
+		uni.removeStorageSync(STORAGE_KEY)
+	} catch (err) {
+		console.error('clear failed', err)
+	}
+}
+
+/* ------------------------------ Persona ----------------------------- */
+
+export function createPersona(): Persona {
+	const now = Date.now()
+	const persona = {
+		id: nextId('p'),
+		name: '',
+		tagline: '',
+		soul: '',
+		greeting: '',
+		tone: 0,
+		pinned: false,
+		proactive: true,
+		memoryMode: 'standard',
+		createdAt: now
+	} as Persona
+	state.personas.push(persona)
+	return persona
+}
+
+export function findPersona(id: string): Persona | null {
+	for (let i = 0; i < state.personas.length; i++) {
+		if (state.personas[i].id == id) return state.personas[i]
+	}
+	return null
+}
+
+export function updatePersona(persona: Persona): void {
+	for (let i = 0; i < state.personas.length; i++) {
+		if (state.personas[i].id == persona.id) {
+			state.personas[i] = persona
+			break
+		}
+	}
+	persist()
+}
+
+export function deletePersona(id: string): void {
+	for (let i = state.sessions.length - 1; i >= 0; i--) {
+		if (state.sessions[i].personaId == id) state.sessions.splice(i, 1)
+	}
+	for (let i = state.memories.length - 1; i >= 0; i--) {
+		if (state.memories[i].personaId == id) state.memories.splice(i, 1)
+	}
+	for (let i = state.personas.length - 1; i >= 0; i--) {
+		if (state.personas[i].id == id) state.personas.splice(i, 1)
+	}
+	persist()
+}
+
+export function togglePersonaPinned(id: string): void {
+	const persona = findPersona(id)
+	if (persona == null) return
+	persona!.pinned = !persona!.pinned
+	persist()
+}
+
+/* ------------------------------ Session ----------------------------- */
+
+export function findSession(id: string): Session | null {
+	for (let i = 0; i < state.sessions.length; i++) {
+		if (state.sessions[i].id == id) return state.sessions[i]
+	}
+	return null
+}
+
+export function findSessionByPersona(personaId: string): Session | null {
+	for (let i = 0; i < state.sessions.length; i++) {
+		if (state.sessions[i].personaId == personaId) return state.sessions[i]
+	}
+	return null
+}
+
+export function ensureSession(personaId: string): Session {
+	const existing = findSessionByPersona(personaId)
+	if (existing != null) return existing!
+	const persona = findPersona(personaId)
+	const session = {
+		id: nextId('s'),
+		personaId: personaId,
+		messages: [] as Message[],
+		updatedAt: Date.now(),
+		unread: 0,
+		pinned: false,
+		muted: false,
+		draft: ''
+	} as Session
+	if (persona != null && persona!.greeting.length > 0) {
+		session.messages.push({
+			id: nextId('m'),
+			role: 'assistant',
+			text: persona!.greeting,
+			thinking: '',
+			createdAt: Date.now(),
+			proactive: false
+		} as Message)
+	}
+	state.sessions.unshift(session)
+	persist()
+	return session
+}
+
+export function appendMessage(sessionId: string, text: string): Message | null {
+	const session = findSession(sessionId)
+	if (session == null) return null
+	const message = {
+		id: nextId('m'),
+		role: 'user',
+		text: text,
+		thinking: '',
+		createdAt: Date.now(),
+		proactive: false
+	} as Message
+	session!.messages.push(message)
+	session!.updatedAt = Date.now()
+	session!.unread = 0
+	persist()
+	return message
+}
+
+export function deleteMessage(sessionId: string, messageId: string): void {
+	const session = findSession(sessionId)
+	if (session == null) return
+	for (let i = session!.messages.length - 1; i >= 0; i--) {
+		if (session!.messages[i].id == messageId) session!.messages.splice(i, 1)
+	}
+	persist()
+}
+
+export function clearMessages(sessionId: string): void {
+	const session = findSession(sessionId)
+	if (session == null) return
+	session!.messages.length = 0
+	persist()
+}
+
+export function deleteSession(sessionId: string): void {
+	for (let i = state.sessions.length - 1; i >= 0; i--) {
+		if (state.sessions[i].id == sessionId) state.sessions.splice(i, 1)
+	}
+	persist()
+}
+
+export function toggleSessionPinned(sessionId: string): void {
+	const session = findSession(sessionId)
+	if (session == null) return
+	session!.pinned = !session!.pinned
+	persist()
+}
+
+export function toggleSessionMuted(sessionId: string): void {
+	const session = findSession(sessionId)
+	if (session == null) return
+	session!.muted = !session!.muted
+	persist()
+}
+
+export function markSessionRead(sessionId: string): void {
+	const session = findSession(sessionId)
+	if (session == null) return
+	session!.unread = 0
+}
+
+/* ------------------------------ Memory ------------------------------ */
+
+export function addMemory(personaId: string, content: string, category: string): void {
+	state.memories.push({
+		id: nextId('mem'),
+		personaId: personaId,
+		content: content,
+		category: category,
+		importance: 3,
+		createdAt: Date.now()
+	} as Memory)
+	persist()
+}
+
+export function deleteMemory(id: string): void {
+	for (let i = state.memories.length - 1; i >= 0; i--) {
+		if (state.memories[i].id == id) state.memories.splice(i, 1)
+	}
+	persist()
+}
+
+export function memoriesOf(personaId: string): Memory[] {
+	const result: Memory[] = []
+	for (let i = 0; i < state.memories.length; i++) {
+		if (state.memories[i].personaId == personaId) result.push(state.memories[i])
+	}
+	return result
+}
+
+/* ------------------------------ Profile ----------------------------- */
+
+export function saveProfile(nickname: string, bio: string, tone: number): void {
+	state.profile.nickname = nickname
+	state.profile.bio = bio
+	state.profile.tone = tone
+	persist()
+}
+
+/* ------------------------------ Settings ---------------------------- */
+
+export function setSettings(next: Settings): void {
+	state.settings.proactive = next.proactive
+	state.settings.thinkingCollapsed = next.thinkingCollapsed
+	state.settings.segmentBubble = next.segmentBubble
+	state.settings.enterToSend = next.enterToSend
+	state.settings.motion = next.motion
+	state.settings.fontSize = next.fontSize
+	state.settings.autoBackup = next.autoBackup
+	persist()
+}
+
+/* ------------------------------ Model ------------------------------- */
+
+export function saveModelConfig(config: ModelConfig): void {
+	state.modelConfig.endpoint = config.endpoint
+	state.modelConfig.apiKey = config.apiKey
+	state.modelConfig.model = config.model
+	state.modelConfig.temperature = config.temperature
+	state.modelConfig.configured = config.configured
+	persist()
+}
+
+/* ----------------------------- Feedback ----------------------------- */
+
+export function addFeedback(kind: string, content: string, contact: string): void {
+	state.feedbacks.unshift({
+		id: nextId('fb'),
+		kind: kind,
+		content: content,
+		contact: contact,
+		createdAt: Date.now()
+	} as Feedback)
+	persist()
+}
+
+/* ----------------------------- Derived ------------------------------ */
+
+export function personaName(personaId: string): string {
+	const persona = findPersona(personaId)
+	if (persona == null || persona!.name.length == 0) return '未命名'
+	return persona!.name
+}
+
+export function lastMessageOf(session: Session): Message | null {
+	if (session.messages.length == 0) return null
+	return session.messages[session.messages.length - 1]
+}
+
+export function messageCountOf(session: Session): number {
+	return session.messages.length
+}
+
+export function totalMessages(): number {
+	let total = 0
+	for (let i = 0; i < state.sessions.length; i++) total += state.sessions[i].messages.length
+	return total
+}
+
+export function totalUnread(): number {
+	let total = 0
+	for (let i = 0; i < state.sessions.length; i++) total += state.sessions[i].unread
+	return total
+}
+
+export function sortedSessions(): Session[] {
+	const result: Session[] = []
+	for (let i = 0; i < state.sessions.length; i++) result.push(state.sessions[i])
+	result.sort((a, b) => {
+		if (a.pinned != b.pinned) return a.pinned ? -1 : 1
+		return b.updatedAt - a.updatedAt
+	})
+	return result
+}
+
+export function sortedPersonas(): Persona[] {
+	const result: Persona[] = []
+	for (let i = 0; i < state.personas.length; i++) result.push(state.personas[i])
+	result.sort((a, b) => {
+		if (a.pinned != b.pinned) return a.pinned ? -1 : 1
+		return a.createdAt - b.createdAt
+	})
+	return result
+}
+
+export function searchPersonas(keyword: string): Persona[] {
+	const all = sortedPersonas()
+	if (keyword.length == 0) return all
+	const result: Persona[] = []
+	const lower = keyword.toLowerCase()
+	for (let i = 0; i < all.length; i++) {
+		const p = all[i]
+		if (p.name.toLowerCase().includes(lower) || p.tagline.toLowerCase().includes(lower) || p.soul.toLowerCase().includes(lower)) {
+			result.push(p)
+		}
+	}
+	return result
+}

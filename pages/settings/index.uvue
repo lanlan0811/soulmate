@@ -1,0 +1,126 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="设置" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<sm-section title="连接" desc="本机配置">
+					<sm-list-group>
+						<sm-list-row title="模型连接" :desc="modelDesc" icon="server" icon-tone="sunken" @tap="goConnect"></sm-list-row>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="gap"></view>
+
+				<sm-section title="功能与外观">
+					<sm-list-group>
+						<sm-list-row title="聊天与外观" desc="思考展开、分段气泡、字号与动效" icon="settings" @tap="goFeatures"></sm-list-row>
+						<view class="divider"></view>
+						<sm-list-row title="记忆" desc="记忆会随人设一起保存在本机" icon="sparkles" icon-tone="accent" :clickable="false" :arrow="false" value="随人设"></sm-list-row>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="gap"></view>
+
+				<sm-section title="数据">
+					<sm-list-group>
+						<sm-list-row title="数据备份" desc="导出与恢复全部本地数据" icon="download" icon-tone="sunken" @tap="goBackup"></sm-list-row>
+						<view class="divider"></view>
+						<sm-list-row title="全部对话的看板" desc="消息量与人设分布" icon="chart-bar" @tap="goDashboard"></sm-list-row>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="gap"></view>
+
+				<sm-section title="其它">
+					<sm-list-group>
+						<sm-list-row title="关于心契" desc="版本、隐私与许可" icon="info" icon-tone="sunken" :arrow="true" @tap="goAbout"></sm-list-row>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="note">
+					<text class="note__text">心契是本地优先的 AI 伴侣应用。当前版本不连接任何服务器，所有数据只保存在这台手机上。</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state } from '../../store/app.uts'
+
+	const modelDesc = computed((): string => {
+		if (!state.modelConfig.configured) return '还没有配置模型'
+		const name = state.modelConfig.model.length == 0 ? '自定义模型' : state.modelConfig.model
+		return `${name} · 已保存`
+	})
+
+	const goConnect = (): void => {
+		uni.navigateTo({ url: '/pages/settings/connect' })
+	}
+
+	const goFeatures = (): void => {
+		uni.navigateTo({ url: '/pages/settings/features' })
+	}
+
+	const goBackup = (): void => {
+		uni.navigateTo({ url: '/pages/backup/backup' })
+	}
+
+	const goDashboard = (): void => {
+		uni.navigateTo({ url: '/pages/dashboard/dashboard' })
+	}
+
+	const goAbout = (): void => {
+		uni.reLaunch({ url: '/pages/main/main?tab=3' })
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.gap {
+		height: var(--sm-space-4);
+	}
+
+	.divider {
+		height: var(--sm-border-hairline);
+		background-color: var(--sm-color-border-subtle);
+		margin-left: var(--sm-space-4);
+		margin-right: var(--sm-space-4);
+	}
+
+	.note {
+		margin-top: var(--sm-space-5);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+	}
+
+	.note__text {
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-relaxed);
+		color: var(--sm-color-text-muted);
+	}
+</style>

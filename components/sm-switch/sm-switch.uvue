@@ -1,0 +1,59 @@
+<template>
+	<view class="sm-switch" :class="modelValue ? 'sm-switch--on' : 'sm-switch--off'" :hover-class="'sm-switch--pressed'" @click="onToggle">
+		<view class="sm-switch__thumb" :class="modelValue ? 'sm-switch__thumb--on' : 'sm-switch__thumb--off'"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	const props = withDefaults(defineProps<{
+		modelValue?: boolean
+		disabled?: boolean
+	}>(), {
+		modelValue: false,
+		disabled: false
+	})
+
+	const emit = defineEmits(['update:modelValue', 'change'])
+
+	const onToggle = (): void => {
+		if (props.disabled) return
+		const next = !props.modelValue
+		emit('update:modelValue', next)
+		emit('change', next)
+	}
+</script>
+
+<style>
+	.sm-switch {
+		width: var(--sm-size-control-lg);
+		height: var(--sm-space-8);
+		border-radius: var(--sm-radius-full);
+		padding-left: var(--sm-space-1);
+		padding-right: var(--sm-space-1);
+		flex-direction: row;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.sm-switch--on {
+		background-color: var(--sm-color-action-primary);
+		justify-content: flex-end;
+	}
+
+	.sm-switch--off {
+		background-color: var(--sm-color-border-strong);
+		justify-content: flex-start;
+	}
+
+	.sm-switch--pressed {
+		opacity: 0.8;
+	}
+
+	.sm-switch__thumb {
+		width: var(--sm-space-6);
+		height: var(--sm-space-6);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-neutral-0);
+		box-shadow: var(--sm-shadow-sm);
+	}
+</style>

@@ -1,9 +1,9 @@
 {
-    "name" : "soulmate-2.0",
+    "name" : "心契",
     "appid" : "__UNI__513F189",
     "description" : "",
-    "versionName" : "1.0.0",
-    "versionCode" : "100",
+    "versionName" : "0.1.0",
+    "versionCode" : "10",
     "uni-app-x" : {
         "styleIsolationVersion" : "2",
         "vapor-render-target" : "bytecode"

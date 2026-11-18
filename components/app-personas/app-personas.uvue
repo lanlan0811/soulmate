@@ -1,0 +1,356 @@
+<template>
+	<view class="panel">
+		<view class="panel__head">
+			<text class="panel__title">人设</text>
+			<view class="panel__add" :hover-class="'panel__add--pressed'" @click="onCreate">
+				<sm-icon name="plus" variant="brand" size="md"></sm-icon>
+			</view>
+		</view>
+
+		<view class="panel__segment">
+			<sm-segment :items="segmentItems" v-model="segment" @change="onSegmentChange"></sm-segment>
+		</view>
+
+		<view v-if="segment == 'cast'" class="panel__search">
+			<sm-search-bar v-model="keyword" placeholder="搜名字、称呼或角色设定"></sm-search-bar>
+		</view>
+
+		<scroll-view class="panel__scroll" :scroll-y="true">
+			<view v-if="segment == 'cast'" class="panel__list">
+				<view v-if="personas.length > 0" class="cast">
+					<view v-for="item in personas" :key="item.id" class="cast__item" :hover-class="'cast__item--pressed'" @click="openPersona(item.id)" @longpress="onLongPress(item.id)">
+						<view class="cast__avatar">
+							<sm-avatar :name="item.name" :tone="item.tone" size="lg"></sm-avatar>
+							<view v-if="item.pinned" class="cast__badge"></view>
+						</view>
+						<view class="cast__body">
+							<text class="cast__name">{{ item.name }}</text>
+							<text class="cast__desc">{{ item.desc }}</text>
+						</view>
+						<view class="cast__right">
+							<text v-if="item.note.length > 0" class="cast__note">{{ item.note }}</text>
+							<sm-icon name="chevron-right" variant="muted" size="sm"></sm-icon>
+						</view>
+					</view>
+				</view>
+				<sm-empty v-else-if="keyword.length > 0" icon="search" title="没有找到匹配的人设" :desc="`试试别的关键词，或新建一个`"></sm-empty>
+				<sm-empty v-else icon="smile" title="还没有人设" desc="是谁，由你决定" action="创建人设" actionIcon="plus" @action="onCreate"></sm-empty>
+			</view>
+
+			<view v-else class="panel__list">
+				<view class="me">
+					<sm-avatar :name="profileName" :tone="state.profile.tone" size="xl"></sm-avatar>
+					<text class="me__name">{{ profileName }}</text>
+					<text class="me__bio">{{ profileBio }}</text>
+					<view class="me__action">
+						<sm-button label="编辑我的资料" variant="secondary" size="sm" icon="edit" @tap="goEditProfile"></sm-button>
+					</view>
+				</view>
+				<view class="hint">
+					<text class="hint__text">Ta 会怎么称呼你、怎么看你，都在这里。人设只在本机保存。</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<sm-sheet :visible="actionVisible" :title="actionName" desc="人设操作" @close="actionVisible = false">
+			<view class="actions">
+				<view class="actions__row" @click="editPersona">
+					<sm-icon name="edit" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">编辑人设</text>
+				</view>
+				<view class="actions__row" @click="togglePin">
+					<sm-icon name="pin" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">{{ actionPinned ? '取消置顶' : '置顶人设' }}</text>
+				</view>
+				<view class="actions__row" @click="openChatFromAction">
+					<sm-icon name="message-circle" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">开始对话</text>
+				</view>
+			</view>
+		</sm-sheet>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state } from '../../store/app.uts'
+	import { searchPersonas, findPersona, togglePersonaPinned } from '../../store/app.uts'
+
+	type CastItem = {
+		id: string
+		name: string
+		desc: string
+		tone: number
+		note: string
+		pinned: boolean
+	}
+
+	const emit = defineEmits(['create', 'openPersona', 'editPersona', 'editProfile', 'openChat'])
+
+	const segment = ref('cast')
+	const keyword = ref('')
+	const actionVisible = ref(false)
+	const actionPersonaId = ref('')
+
+	const segmentItems = [
+		{ value: 'cast', label: 'Ta 们' },
+		{ value: 'me', label: '我（扮演）' }
+	]
+
+	const profileName = computed((): string => {
+		return state.profile.nickname.length == 0 ? '还没有称呼' : state.profile.nickname
+	})
+
+	const profileBio = computed((): string => {
+		return state.profile.bio.length == 0 ? '让 Ta 知道怎么称呼你' : state.profile.bio
+	})
+
+	const personas = computed((): CastItem[] => {
+		const list = searchPersonas(keyword.value)
+		const result: CastItem[] = []
+		for (let i = 0; i < list.length; i++) {
+			const p = list[i]
+			const note = p.pinned ? '置顶' : ''
+			result.push({
+				id: p.id,
+				name: p.name.length == 0 ? '未命名' : p.name,
+				desc: p.tagline.length == 0 ? '还没有写介绍' : p.tagline,
+				tone: p.tone,
+				note: note,
+				pinned: p.pinned
+			} as CastItem)
+		}
+		return result
+	})
+
+	const actionName = computed((): string => {
+		const p = findPersona(actionPersonaId.value)
+		return p == null ? '' : p!.name
+	})
+
+	const actionPinned = computed((): boolean => {
+		const p = findPersona(actionPersonaId.value)
+		return p == null ? false : p!.pinned
+	})
+
+	const onSegmentChange = (value: string): void => {
+		segment.value = value
+	}
+
+	const onCreate = (): void => {
+		emit('create')
+	}
+
+	const openPersona = (id: string): void => {
+		emit('openPersona', id)
+	}
+
+	const onLongPress = (id: string): void => {
+		actionPersonaId.value = id
+		actionVisible.value = true
+	}
+
+	const editPersona = (): void => {
+		actionVisible.value = false
+		emit('editPersona', actionPersonaId.value)
+	}
+
+	const togglePin = (): void => {
+		togglePersonaPinned(actionPersonaId.value)
+		actionVisible.value = false
+	}
+
+	const openChatFromAction = (): void => {
+		actionVisible.value = false
+		emit('openChat', actionPersonaId.value)
+	}
+
+	const goEditProfile = (): void => {
+		emit('editProfile')
+	}
+</script>
+
+<style>
+	.panel {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.panel__head {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		height: var(--sm-size-nav-bar);
+	}
+
+	.panel__title {
+		font-size: var(--sm-fs-display);
+		font-weight: var(--sm-weight-bold);
+		letter-spacing: var(--sm-tracking-tight);
+		color: var(--sm-color-text-primary);
+	}
+
+	.panel__add {
+		width: var(--sm-size-control-lg);
+		height: var(--sm-size-control-lg);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.panel__add--pressed {
+		opacity: 0.75;
+	}
+
+	.panel__segment {
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+	}
+
+	.panel__search {
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		margin-top: var(--sm-space-3);
+	}
+
+	.panel__scroll {
+		flex: 1;
+	}
+
+	.panel__list {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-4);
+	}
+
+	.cast {
+		flex-direction: column;
+	}
+
+	.cast__item {
+		flex-direction: row;
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		margin-bottom: var(--sm-space-3);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.cast__item--pressed {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.cast__avatar {
+		position: relative;
+		margin-right: var(--sm-space-3);
+	}
+
+	.cast__badge {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: var(--sm-space-2);
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.cast__body {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.cast__name {
+		font-size: var(--sm-fs-lg);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.cast__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.cast__right {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.cast__note {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+		margin-right: var(--sm-space-1);
+	}
+
+	.me {
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-top: var(--sm-space-6);
+		padding-bottom: var(--sm-space-6);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.me__name {
+		margin-top: var(--sm-space-3);
+		font-size: var(--sm-fs-xl);
+		font-weight: var(--sm-weight-bold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.me__bio {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+	}
+
+	.me__action {
+		margin-top: var(--sm-space-4);
+		flex-direction: row;
+	}
+
+	.hint {
+		margin-top: var(--sm-space-3);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		border-radius: var(--sm-radius-md);
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.hint__text {
+		font-size: var(--sm-fs-xs);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-brand-800);
+	}
+
+	.actions {
+		flex-direction: column;
+		margin-top: var(--sm-space-4);
+	}
+
+	.actions__row {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+	}
+
+	.actions__text {
+		margin-left: var(--sm-space-3);
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+	}
+</style>

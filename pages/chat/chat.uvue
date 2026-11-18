@@ -1,0 +1,591 @@
+<template>
+	<view class="sm-screen">
+		<view class="sm-statusbar"></view>
+
+		<view class="top">
+			<view class="top__back" :hover-class="'top__btn--pressed'" @click="goBack">
+				<sm-icon name="arrow-left" variant="ink" size="md"></sm-icon>
+			</view>
+			<view class="top__center">
+				<text class="top__name">{{ personaName }}</text>
+				<text class="top__sub">{{ headerSub }}</text>
+			</view>
+			<view class="top__right">
+				<view class="ctx" :hover-class="'top__btn--pressed'" @click="openContext">
+					<text class="ctx__text">{{ contextPct }}%</text>
+				</view>
+				<view class="top__btn" :hover-class="'top__btn--pressed'" @click="toggleSearch">
+					<sm-icon name="search" variant="ink" size="md"></sm-icon>
+				</view>
+				<view class="top__btn" :hover-class="'top__btn--pressed'" @click="openSessionSheet">
+					<sm-icon name="settings" variant="ink" size="md"></sm-icon>
+				</view>
+			</view>
+		</view>
+
+		<view v-if="searchVisible" class="search-wrap">
+			<sm-search-bar v-model="keyword" placeholder="搜索这段对话里的消息"></sm-search-bar>
+		</view>
+
+		<scroll-view class="thread" :scroll-y="true" :scroll-into-view="scrollTarget" :scroll-with-animation="true">
+			<view class="thread__inner">
+				<view v-if="filteredMessages.length == 0" class="thread__empty">
+					<sm-empty v-if="keyword.length > 0" icon="search" :title="`没有找到包含「${keyword}」的消息`" desc="换个词试试，或者清空搜索"></sm-empty>
+					<sm-empty v-else icon="message-circle" title="还没有开始对话" desc="说点什么，让这一刻留下来"></sm-empty>
+				</view>
+
+				<view v-else class="thread__list">
+					<view v-for="(item, index) in filteredMessages" :key="item.id">
+						<view v-if="item.showTime" class="stamp">
+							<text class="stamp__text">{{ item.timeLabel }}</text>
+						</view>
+						<sm-bubble :id="`msg-${item.id}`" :role="item.role" :text="item.text" :thinking="item.thinking" :proactive="item.proactive" :name="personaName" :tone="personaTone" :user-name="userName" :user-tone="userTone" :collapsed="state.settings.thinkingCollapsed" @longpress="onMessageLongPress(item.id)"></sm-bubble>
+					</view>
+				</view>
+			</view>
+		</scroll-view>
+
+		<sm-composer v-model="draft" :placeholder="composerPlaceholder" @send="send" @more="openMore"></sm-composer>
+		<view class="sm-safe-bottom"></view>
+
+		<sm-sheet :visible="msgSheetVisible" title="消息" desc="选择要执行的操作" @close="msgSheetVisible = false">
+			<view class="actions">
+				<view class="actions__row" @click="copyMessage">
+					<sm-icon name="copy" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">复制</text>
+				</view>
+				<view v-if="isOwnMessage" class="actions__row" @click="editMessage">
+					<sm-icon name="edit" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">编辑后重发</text>
+				</view>
+				<view class="actions__row" @click="askDeleteMessage">
+					<sm-icon name="trash" variant="danger" size="md"></sm-icon>
+					<text class="actions__text actions__text--danger">删除这条</text>
+				</view>
+			</view>
+		</sm-sheet>
+
+		<sm-sheet :visible="moreVisible" title="会话" @close="moreVisible = false">
+			<view class="actions">
+				<view class="actions__row" @click="askClear">
+					<sm-icon name="refresh" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">清空对话</text>
+				</view>
+				<view class="actions__row" @click="goPersonaDetail">
+					<sm-icon name="user" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">查看人设</text>
+				</view>
+				<view class="actions__row" @click="askDeleteSession">
+					<sm-icon name="trash" variant="danger" size="md"></sm-icon>
+					<text class="actions__text actions__text--danger">删除会话</text>
+				</view>
+			</view>
+		</sm-sheet>
+
+		<sm-sheet :visible="sessionSheetVisible" title="会话设置" @close="sessionSheetVisible = false">
+			<view class="settings-list">
+				<view class="settings-row">
+					<text class="settings-row__label">消息免打扰</text>
+					<sm-switch v-model="mutedValue" @change="onMuteChange"></sm-switch>
+				</view>
+				<view class="settings-row">
+					<text class="settings-row__label">置顶会话</text>
+					<sm-switch v-model="pinnedValue" @change="onPinChange"></sm-switch>
+				</view>
+				<view class="settings-row settings-row--tap" @click="goChatFeatures">
+					<text class="settings-row__label">思考与气泡设置</text>
+					<sm-icon name="chevron-right" variant="muted" size="sm"></sm-icon>
+				</view>
+			</view>
+		</sm-sheet>
+
+		<sm-sheet :visible="contextVisible" title="上下文占用" desc="按字符数粗略估算，未连接模型时仅作界面演示" @close="contextVisible = false">
+			<view class="context">
+				<view class="context__bar">
+					<view class="context__fill" :style="contextFillStyle"></view>
+				</view>
+				<text class="context__text">当前 {{ contextChars }} 字 · 约 {{ contextPct }}%</text>
+				<text class="context__note">模型尚未连接，这里不会发起任何网络请求。</text>
+			</view>
+		</sm-sheet>
+
+		<sm-dialog :visible="deleteMsgVisible" title="删除这条消息？" desc="删除后无法恢复。" confirm-label="删除" danger @confirm="confirmDeleteMessage" @cancel="deleteMsgVisible = false"></sm-dialog>
+		<sm-dialog :visible="clearVisible" title="清空这段对话？" desc="所有消息都会被删除，人设会保留。" confirm-label="清空" danger @confirm="confirmClear" @cancel="clearVisible = false"></sm-dialog>
+		<sm-dialog :visible="deleteSessionVisible" title="删除这个会话？" desc="会话与全部消息会被删除，且无法恢复。" confirm-label="删除" danger @confirm="confirmDeleteSession" @cancel="deleteSessionVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state } from '../../store/app.uts'
+	import { findPersona, findSession, ensureSession, appendMessage, deleteMessage, clearMessages, deleteSession, findSessionByPersona, toggleSessionPinned, toggleSessionMuted, markSessionRead } from '../../store/app.uts'
+	import { formatFullTime, contextPercent } from '../../utils/format.uts'
+	import { SIZE } from '../../theme/tokens'
+
+	type BubbleItem = {
+		id: string
+		role: string
+		text: string
+		thinking: string
+		proactive: boolean
+		timeLabel: string
+		showTime: boolean
+	}
+
+	const personaId = ref('')
+	const sessionId = ref('')
+	const draft = ref('')
+	const keyword = ref('')
+	const searchVisible = ref(false)
+	const scrollTarget = ref('')
+
+	const msgSheetVisible = ref(false)
+	const moreVisible = ref(false)
+	const sessionSheetVisible = ref(false)
+	const contextVisible = ref(false)
+	const deleteMsgVisible = ref(false)
+	const clearVisible = ref(false)
+	const deleteSessionVisible = ref(false)
+
+	const targetMessageId = ref('')
+	const mutedValue = ref(false)
+	const pinnedValue = ref(false)
+
+	onLoad((query) => {
+		const q = query as UTSJSONObject | null
+		if (q != null) {
+			const pid = q['personaId']
+			const sid = q['sessionId']
+			if (pid != null) personaId.value = `${pid}`
+			if (sid != null) sessionId.value = `${sid}`
+		}
+		if (sessionId.value.length > 0) {
+			const s = findSession(sessionId.value)
+			if (s != null) {
+				personaId.value = s!.personaId
+				markSessionRead(sessionId.value)
+			}
+		}
+		if (sessionId.value.length == 0 && personaId.value.length > 0) {
+			const existing = findSessionByPersona(personaId.value)
+			if (existing != null) {
+				sessionId.value = existing!.id
+			} else {
+				const created = ensureSession(personaId.value)
+				sessionId.value = created.id
+			}
+		}
+		syncToggles()
+		scrollToBottom()
+	})
+
+	onShow(() => {
+		syncToggles()
+	})
+
+	const persona = computed(() => findPersona(personaId.value))
+	const session = computed(() => findSession(sessionId.value))
+
+	const personaName = computed((): string => {
+		const p = persona.value
+		if (p == null) return '对话'
+		return p!.name.length == 0 ? '未命名' : p!.name
+	})
+
+	const personaTone = computed((): number => {
+		const p = persona.value
+		return p == null ? 0 : p!.tone
+	})
+
+	const userName = computed((): string => state.profile.nickname.length == 0 ? '我' : state.profile.nickname)
+	const userTone = computed((): number => state.profile.tone)
+
+	const headerSub = computed((): string => {
+		if (session.value == null) return '还没有开始'
+		const count = session.value!.messages.length
+		return count == 0 ? '还没有开始' : `${count} 条消息`
+	})
+
+	const composerPlaceholder = computed((): string => {
+		if (persona.value == null) return '先创建一个人设'
+		return '说点什么…'
+	})
+
+	const filteredMessages = computed((): BubbleItem[] => {
+		const s = session.value
+		if (s == null) return [] as BubbleItem[]
+		const result: BubbleItem[] = []
+		const kw = keyword.value.trim().toLowerCase()
+		let lastDay = ''
+		for (let i = 0; i < s!.messages.length; i++) {
+			const m = s!.messages[i]
+			if (kw.length > 0 && !m.text.toLowerCase().includes(kw)) continue
+			const dayKey = formatFullTime(m.createdAt)
+			let showTime = false
+			if (i == 0) {
+				showTime = true
+			} else {
+				const prev = s!.messages[i - 1]
+				showTime = m.createdAt - prev.createdAt > 300000
+			}
+			if (kw.length > 0) showTime = false
+			result.push({
+				id: m.id,
+				role: m.role,
+				text: m.text,
+				thinking: m.thinking,
+				proactive: m.proactive,
+				timeLabel: dayKey,
+				showTime: showTime
+			} as BubbleItem)
+		}
+		return result
+	})
+
+	const contextChars = computed((): number => {
+		const s = session.value
+		if (s == null) return 0
+		let total = 0
+		for (let i = 0; i < s!.messages.length; i++) total += s!.messages[i].text.length
+		return total
+	})
+
+	const contextPct = computed((): number => contextPercent(contextChars.value, 4000))
+
+	const contextFillStyle = computed((): string => {
+		return `width: ${contextPct.value}%;`
+	})
+
+	const isOwnMessage = computed((): boolean => {
+		const s = session.value
+		if (s == null) return false
+		for (let i = 0; i < s!.messages.length; i++) {
+			if (s!.messages[i].id == targetMessageId.value) return s!.messages[i].role == 'user'
+		}
+		return false
+	})
+
+	const syncToggles = (): void => {
+		const s = session.value
+		if (s == null) return
+		mutedValue.value = s!.muted
+		pinnedValue.value = s!.pinned
+	}
+
+	const scrollToBottom = (): void => {
+		const s = session.value
+		if (s == null || s!.messages.length == 0) {
+			scrollTarget.value = ''
+			return
+		}
+		const last = s!.messages[s!.messages.length - 1]
+		scrollTarget.value = `msg-${last.id}`
+	}
+
+	const send = (): void => {
+		const text = draft.value.trim()
+		if (text.length == 0 || sessionId.value.length == 0) return
+		appendMessage(sessionId.value, text)
+		draft.value = ''
+		scrollToBottom()
+	}
+
+	const toggleSearch = (): void => {
+		searchVisible.value = !searchVisible.value
+		if (!searchVisible.value) keyword.value = ''
+	}
+
+	const openMore = (): void => {
+		moreVisible.value = true
+	}
+
+	const openSessionSheet = (): void => {
+		syncToggles()
+		sessionSheetVisible.value = true
+	}
+
+	const openContext = (): void => {
+		contextVisible.value = true
+	}
+
+	const onMessageLongPress = (id: string): void => {
+		targetMessageId.value = id
+		msgSheetVisible.value = true
+	}
+
+	const copyMessage = (): void => {
+		const s = session.value
+		if (s == null) return
+		for (let i = 0; i < s!.messages.length; i++) {
+			if (s!.messages[i].id == targetMessageId.value) {
+				uni.setClipboardData({ data: s!.messages[i].text })
+				break
+			}
+		}
+		msgSheetVisible.value = false
+	}
+
+	const editMessage = (): void => {
+		const s = session.value
+		if (s == null) return
+		for (let i = 0; i < s!.messages.length; i++) {
+			if (s!.messages[i].id == targetMessageId.value) {
+				draft.value = s!.messages[i].text
+				deleteMessage(sessionId.value, targetMessageId.value)
+				break
+			}
+		}
+		msgSheetVisible.value = false
+	}
+
+	const askDeleteMessage = (): void => {
+		msgSheetVisible.value = false
+		deleteMsgVisible.value = true
+	}
+
+	const confirmDeleteMessage = (): void => {
+		deleteMessage(sessionId.value, targetMessageId.value)
+		deleteMsgVisible.value = false
+	}
+
+	const askClear = (): void => {
+		moreVisible.value = false
+		clearVisible.value = true
+	}
+
+	const confirmClear = (): void => {
+		clearMessages(sessionId.value)
+		clearVisible.value = false
+		scrollTarget.value = ''
+	}
+
+	const askDeleteSession = (): void => {
+		moreVisible.value = false
+		deleteSessionVisible.value = true
+	}
+
+	const confirmDeleteSession = (): void => {
+		deleteSession(sessionId.value)
+		deleteSessionVisible.value = false
+		uni.navigateBack()
+	}
+
+	const onMuteChange = (value: boolean): void => {
+		toggleSessionMuted(sessionId.value)
+	}
+
+	const onPinChange = (value: boolean): void => {
+		toggleSessionPinned(sessionId.value)
+	}
+
+	const goChatFeatures = (): void => {
+		sessionSheetVisible.value = false
+		uni.navigateTo({ url: '/pages/settings/features' })
+	}
+
+	const goPersonaDetail = (): void => {
+		moreVisible.value = false
+		if (personaId.value.length == 0) return
+		uni.navigateTo({ url: `/pages/persona/detail?id=${personaId.value}` })
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.top {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-nav-bar);
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		flex-shrink: 0;
+	}
+
+	.top__back {
+		width: var(--sm-size-control-md);
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-surface);
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.top__btn {
+		width: var(--sm-size-control-md);
+		height: var(--sm-size-control-md);
+		border-radius: var(--sm-radius-full);
+		align-items: center;
+		justify-content: center;
+		margin-left: var(--sm-space-1);
+	}
+
+	.top__btn--pressed {
+		opacity: 0.6;
+	}
+
+	.top__center {
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.top__name {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.top__sub {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.top__right {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.ctx {
+		height: var(--sm-size-control-sm);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-brand-100);
+		align-items: center;
+		justify-content: center;
+		margin-left: var(--sm-space-1);
+	}
+
+	.ctx__text {
+		font-size: var(--sm-fs-xs);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-brand-800);
+	}
+
+	.search-wrap {
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-2);
+	}
+
+	.thread {
+		flex: 1;
+	}
+
+	.thread__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-top: var(--sm-space-2);
+	}
+
+	.thread__empty {
+		padding-top: var(--sm-space-10);
+	}
+
+	.thread__list {
+		flex-direction: column;
+	}
+
+	.stamp {
+		align-items: center;
+		margin-top: var(--sm-space-2);
+		margin-bottom: var(--sm-space-1);
+	}
+
+	.stamp__text {
+		font-size: var(--sm-fs-2xs);
+		color: var(--sm-color-text-muted);
+		background-color: var(--sm-color-bg-sunken);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		padding-top: var(--sm-space-1);
+		padding-bottom: var(--sm-space-1);
+		border-radius: var(--sm-radius-sm);
+	}
+
+	.actions {
+		flex-direction: column;
+		margin-top: var(--sm-space-4);
+	}
+
+	.actions__row {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+	}
+
+	.actions__text {
+		margin-left: var(--sm-space-3);
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+	}
+
+	.actions__text--danger {
+		color: var(--sm-color-action-danger);
+	}
+
+	.settings-list {
+		flex-direction: column;
+		margin-top: var(--sm-space-3);
+	}
+
+	.settings-row {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		border-radius: var(--sm-radius-md);
+	}
+
+	.settings-row--tap {
+		background-color: var(--sm-color-bg-sunken);
+		margin-top: var(--sm-space-2);
+	}
+
+	.settings-row__label {
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+	}
+
+	.context {
+		flex-direction: column;
+		margin-top: var(--sm-space-4);
+	}
+
+	.context__bar {
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-sunken);
+		overflow: hidden;
+	}
+
+	.context__fill {
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.context__text {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-secondary);
+		text-align: center;
+	}
+
+	.context__note {
+		margin-top: var(--sm-space-2);
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+		text-align: center;
+	}
+</style>

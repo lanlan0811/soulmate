@@ -1,0 +1,47 @@
+{
+  "note": "项目级补充：颜色全部沿用设计库 light token（星河紫 / 梦境粉 / 月光白 / 深夜空），这里只补移动端尺寸、派生色板与渐变端点，不覆盖任何品牌色。",
+  "radius": {
+    "xs": 6
+  },
+  "size": {
+    "navBar": 56,
+    "tabBar": 68,
+    "composer": 56,
+    "avatarSm": 32,
+    "avatarMd": 44,
+    "avatarLg": 64,
+    "avatarXl": 76,
+    "iconXl": 28,
+    "bubbleMax": 268,
+    "pageGutter": 16
+  },
+  "font": {
+    "sizes": {
+      "2xs": 10,
+      "display": 26
+    }
+  },
+  "palette": {
+    "tint0Bg": "#E6ECFC",
+    "tint0Fg": "#5B4C9B",
+    "tint1Bg": "#EDE7F9",
+    "tint1Fg": "#4A4463",
+    "tint2Bg": "#FCEAF3",
+    "tint2Fg": "#C97DA0",
+    "tint3Bg": "#E6F5EC",
+    "tint3Fg": "#3D8B5F",
+    "tint4Bg": "#FDF2DD",
+    "tint4Fg": "#A97312",
+    "tint5Bg": "#E7EEFB",
+    "tint5Fg": "#3A6BA8",
+    "heroFrom": "#A8BAEF",
+    "heroTo": "#8FA5E6",
+    "deepFrom": "#17152B",
+    "deepTo": "#211D38",
+    "onBrandMuted": "#2C2744",
+    "onBrandSoft": "rgba(255,255,255,0.5)",
+    "onDeepMuted": "#C9BEE4",
+    "onDeepSoft": "#4A4463",
+    "scrimSoft": "rgba(23,21,43,0.28)"
+  }
+}

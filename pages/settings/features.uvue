@@ -1,0 +1,258 @@
+<template>
+	<view class="sm-page">
+		<sm-nav-bar title="聊天与外观" @back="goBack"></sm-nav-bar>
+
+		<scroll-view class="body" :scroll-y="true">
+			<view class="body__inner">
+				<sm-section title="聊天">
+					<sm-list-group>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">主动消息</text>
+								<text class="row__desc">允许 Ta 按情绪和时机主动找你</text>
+							</view>
+							<sm-switch v-model="proactive" @change="onToggle"></sm-switch>
+						</view>
+						<view class="divider"></view>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">思考默认收起</text>
+								<text class="row__desc">有思考内容时，先折叠成一行</text>
+							</view>
+							<sm-switch v-model="thinkingCollapsed" @change="onToggle"></sm-switch>
+						</view>
+						<view class="divider"></view>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">分段气泡</text>
+								<text class="row__desc">长回复按段落拆成多条气泡</text>
+							</view>
+							<sm-switch v-model="segmentBubble" @change="onToggle"></sm-switch>
+						</view>
+						<view class="divider"></view>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">回车发送</text>
+								<text class="row__desc">关闭时回车只是换行</text>
+							</view>
+							<sm-switch v-model="enterToSend" @change="onToggle"></sm-switch>
+						</view>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="gap"></view>
+
+				<sm-section title="外观">
+					<sm-list-group>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">字体大小</text>
+								<text class="row__desc">影响消息与表单文字</text>
+							</view>
+							<view class="row__segment">
+								<sm-segment :items="fontItems" v-model="fontSize" @change="onToggle"></sm-segment>
+							</view>
+						</view>
+						<view class="divider"></view>
+						<view class="row">
+							<view class="row__body">
+								<text class="row__title">动效</text>
+								<text class="row__desc">开关、展开与滚动动画</text>
+							</view>
+							<sm-switch v-model="motion" @change="onToggle"></sm-switch>
+						</view>
+					</sm-list-group>
+				</sm-section>
+
+				<view class="gap"></view>
+
+				<view class="preview">
+					<text class="preview__label">效果预览</text>
+					<view class="preview__card">
+						<view class="preview__in">
+							<text class="preview__text">你来了。今天过得怎么样？</text>
+						</view>
+						<view class="preview__out">
+							<text class="preview__text">有点累，刚下班。</text>
+						</view>
+					</view>
+				</view>
+
+				<view class="note">
+					<text class="note__text">这些设置只保存在本机，重启应用后仍然生效。</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="sm-safe-bottom"></view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { ref } from 'vue'
+	import { state, setSettings } from '../../store/app.uts'
+
+	const proactive = ref(true)
+	const thinkingCollapsed = ref(true)
+	const segmentBubble = ref(true)
+	const enterToSend = ref(false)
+	const motion = ref(true)
+	const fontSize = ref('md')
+
+	const fontItems = [
+		{ value: 'sm', label: '小' },
+		{ value: 'md', label: '标准' },
+		{ value: 'lg', label: '大' }
+	]
+
+	onLoad(() => {
+		proactive.value = state.settings.proactive
+		thinkingCollapsed.value = state.settings.thinkingCollapsed
+		segmentBubble.value = state.settings.segmentBubble
+		enterToSend.value = state.settings.enterToSend
+		motion.value = state.settings.motion
+		fontSize.value = state.settings.fontSize
+	})
+
+	const onToggle = (): void => {
+		setSettings({
+			proactive: proactive.value,
+			thinkingCollapsed: thinkingCollapsed.value,
+			segmentBubble: segmentBubble.value,
+			enterToSend: enterToSend.value,
+			motion: motion.value,
+			fontSize: fontSize.value,
+			autoBackup: state.settings.autoBackup
+		})
+	}
+
+	const goBack = (): void => {
+		uni.navigateBack()
+	}
+</script>
+
+<style>
+	.sm-page {
+		flex: 1;
+		flex-direction: column;
+		background-color: var(--sm-color-bg-canvas);
+	}
+
+	.body {
+		flex: 1;
+	}
+
+	.body__inner {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-6);
+	}
+
+	.gap {
+		height: var(--sm-space-4);
+	}
+
+	.row {
+		flex-direction: row;
+		align-items: center;
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+	}
+
+	.row__body {
+		flex: 1;
+		flex-direction: column;
+		margin-right: var(--sm-space-3);
+	}
+
+	.row__title {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-medium);
+		color: var(--sm-color-text-primary);
+	}
+
+	.row__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.row__segment {
+		width: var(--sm-size-container-sm);
+		max-width: 45%;
+		flex-direction: row;
+	}
+
+	.divider {
+		height: var(--sm-border-hairline);
+		background-color: var(--sm-color-border-subtle);
+		margin-left: var(--sm-space-4);
+		margin-right: var(--sm-space-4);
+	}
+
+	.preview {
+		flex-direction: column;
+	}
+
+	.preview__label {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+		margin-bottom: var(--sm-space-2);
+	}
+
+	.preview__card {
+		flex-direction: column;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.preview__in {
+		flex-direction: column;
+		align-self: flex-start;
+		max-width: 80%;
+		background-color: var(--sm-color-bg-sunken);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+	}
+
+	.preview__out {
+		flex-direction: column;
+		align-self: flex-end;
+		max-width: 80%;
+		background-color: var(--sm-color-brand-100);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		padding-top: var(--sm-space-2);
+		padding-bottom: var(--sm-space-2);
+		margin-top: var(--sm-space-2);
+	}
+
+	.preview__text {
+		font-size: var(--sm-fs-sm);
+		line-height: var(--sm-lh-normal);
+		color: var(--sm-color-text-primary);
+	}
+
+	.note {
+		margin-top: var(--sm-space-4);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+	}
+
+	.note__text {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+</style>

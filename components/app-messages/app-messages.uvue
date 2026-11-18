@@ -1,0 +1,397 @@
+<template>
+	<view class="panel">
+		<view class="panel__head">
+			<text class="panel__title">消息</text>
+			<view class="panel__new" :hover-class="'panel__new--pressed'" @click="onNewChat">
+				<sm-icon name="plus" variant="inverse" size="sm"></sm-icon>
+				<text class="panel__new-text">新对话</text>
+			</view>
+		</view>
+
+		<scroll-view class="panel__scroll" :scroll-y="true">
+			<view v-if="sessions.length > 0" class="panel__list">
+				<view v-for="item in sessions" :key="item.id" class="convo" :hover-class="'convo--pressed'" @click="openSession(item.id)" @longpress="onLongPress(item.id)">
+					<view class="convo__avatar">
+						<sm-avatar :name="item.name" :tone="item.tone" size="lg"></sm-avatar>
+						<view v-if="item.unread > 0" class="convo__dot"></view>
+					</view>
+					<view class="convo__body">
+						<view class="convo__line">
+							<text class="convo__name">{{ item.name }}</text>
+							<text class="convo__time">{{ item.time }}</text>
+						</view>
+						<view class="convo__line">
+							<text class="convo__preview" :class="item.unread > 0 ? 'convo__preview--unread' : ''">{{ item.preview }}</text>
+							<view class="convo__marks">
+								<sm-icon v-if="item.muted" name="bell" variant="muted" size="sm"></sm-icon>
+								<sm-icon v-if="item.pinned" name="pin" variant="brand" size="sm"></sm-icon>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<sm-empty v-else icon="message-circle" title="还没有对话" desc="从人设开始，和 Ta 说第一句话" action="新建对话" actionIcon="plus" @action="onNewChat"></sm-empty>
+		</scroll-view>
+
+		<sm-sheet :visible="pickerVisible" title="和谁说话" desc="选一个人设开始新的对话" @close="pickerVisible = false">
+			<scroll-view class="picker" :scroll-y="true">
+				<view v-for="p in personaOptions" :key="p.id" class="picker__row" :hover-class="'picker__row--pressed'" @click="startWith(p.id)">
+					<sm-avatar :name="p.name" :tone="p.tone" size="md"></sm-avatar>
+					<view class="picker__body">
+						<text class="picker__name">{{ p.name }}</text>
+						<text class="picker__desc">{{ p.desc }}</text>
+					</view>
+					<sm-icon name="chevron-right" variant="muted" size="sm"></sm-icon>
+				</view>
+			</scroll-view>
+			<view class="picker__foot">
+				<sm-button label="新建人设" variant="secondary" block icon="plus" @tap="goCreatePersona"></sm-button>
+			</view>
+		</sm-sheet>
+
+		<sm-sheet :visible="actionVisible" :title="actionName" desc="会话操作" @close="actionVisible = false">
+			<view class="actions">
+				<view class="actions__row" @click="togglePin">
+					<sm-icon name="pin" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">{{ actionPinned ? '取消置顶' : '置顶会话' }}</text>
+				</view>
+				<view class="actions__row" @click="toggleMute">
+					<sm-icon name="bell" variant="brand" size="md"></sm-icon>
+					<text class="actions__text">{{ actionMuted ? '取消免打扰' : '消息免打扰' }}</text>
+				</view>
+				<view class="actions__row" @click="askDelete">
+					<sm-icon name="trash" variant="danger" size="md"></sm-icon>
+					<text class="actions__text actions__text--danger">删除会话</text>
+				</view>
+			</view>
+		</sm-sheet>
+
+		<sm-dialog :visible="deleteVisible" title="删除这个会话？" desc="聊天记录会一并删除，且无法恢复。" confirm-label="删除" danger @confirm="confirmDelete" @cancel="deleteVisible = false"></sm-dialog>
+		<sm-dialog :visible="noPersonaVisible" title="还没有人设" desc="先创建一个人设，才能开始对话。" confirm-label="去创建" @confirm="goCreatePersona" @cancel="noPersonaVisible = false"></sm-dialog>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed, ref } from 'vue'
+	import { state } from '../../store/app.uts'
+	import { sortedSessions, findSession, findPersona, toggleSessionPinned, toggleSessionMuted, deleteSession, lastMessageOf } from '../../store/app.uts'
+	import { formatListTime } from '../../utils/format.uts'
+
+	type ConvoItem = {
+		id: string
+		name: string
+		tone: number
+		preview: string
+		time: string
+		unread: number
+		pinned: boolean
+		muted: boolean
+	}
+
+	type PersonaOption = {
+		id: string
+		name: string
+		tone: number
+		desc: string
+	}
+
+	const emit = defineEmits(['openChat', 'createPersona'])
+
+	const pickerVisible = ref(false)
+	const actionVisible = ref(false)
+	const deleteVisible = ref(false)
+	const noPersonaVisible = ref(false)
+	const actionSessionId = ref('')
+
+	const sessions = computed((): ConvoItem[] => {
+		const list = sortedSessions()
+		const result: ConvoItem[] = []
+		for (let i = 0; i < list.length; i++) {
+			const s = list[i]
+			const p = findPersona(s.personaId)
+			const last = lastMessageOf(s)
+			result.push({
+				id: s.id,
+				name: p == null ? '未命名' : (p!.name.length == 0 ? '未命名' : p!.name),
+				tone: p == null ? 0 : p!.tone,
+				preview: last == null ? '还没有消息' : (last!.text.length == 0 ? '还没有消息' : last!.text),
+				time: formatListTime(s.updatedAt),
+				unread: s.unread,
+				pinned: s.pinned,
+				muted: s.muted
+			} as ConvoItem)
+		}
+		return result
+	})
+
+	const personaOptions = computed((): PersonaOption[] => {
+		const result: PersonaOption[] = []
+		for (let i = 0; i < state.personas.length; i++) {
+			const p = state.personas[i]
+			result.push({
+				id: p.id,
+				name: p.name.length == 0 ? '未命名' : p.name,
+				tone: p.tone,
+				desc: p.tagline.length == 0 ? '还没有写介绍' : p.tagline
+			} as PersonaOption)
+		}
+		return result
+	})
+
+	const actionName = computed((): string => {
+		const s = findSession(actionSessionId.value)
+		if (s == null) return ''
+		const p = findPersona(s!.personaId)
+		return p == null ? '会话' : p!.name
+	})
+
+	const actionPinned = computed((): boolean => {
+		const s = findSession(actionSessionId.value)
+		return s == null ? false : s!.pinned
+	})
+
+	const actionMuted = computed((): boolean => {
+		const s = findSession(actionSessionId.value)
+		return s == null ? false : s!.muted
+	})
+
+	const onNewChat = (): void => {
+		if (state.personas.length == 0) {
+			noPersonaVisible.value = true
+			return
+		}
+		pickerVisible.value = true
+	}
+
+	const startWith = (personaId: string): void => {
+		pickerVisible.value = false
+		emit('openChat', personaId)
+	}
+
+	const openSession = (sessionId: string): void => {
+		emit('openSession', sessionId)
+	}
+
+	const onLongPress = (sessionId: string): void => {
+		actionSessionId.value = sessionId
+		actionVisible.value = true
+	}
+
+	const togglePin = (): void => {
+		toggleSessionPinned(actionSessionId.value)
+		actionVisible.value = false
+	}
+
+	const toggleMute = (): void => {
+		toggleSessionMuted(actionSessionId.value)
+		actionVisible.value = false
+	}
+
+	const askDelete = (): void => {
+		actionVisible.value = false
+		deleteVisible.value = true
+	}
+
+	const confirmDelete = (): void => {
+		deleteSession(actionSessionId.value)
+		deleteVisible.value = false
+	}
+
+	const goCreatePersona = (): void => {
+		noPersonaVisible.value = false
+		pickerVisible.value = false
+		emit('createPersona')
+	}
+</script>
+
+<style>
+	.panel {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.panel__head {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		height: var(--sm-size-nav-bar);
+	}
+
+	.panel__title {
+		font-size: var(--sm-fs-display);
+		font-weight: var(--sm-weight-bold);
+		letter-spacing: var(--sm-tracking-tight);
+		color: var(--sm-color-text-primary);
+	}
+
+	.panel__new {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-control-md);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.panel__new--pressed {
+		opacity: 0.85;
+	}
+
+	.panel__new-text {
+		margin-left: var(--sm-space-1);
+		color: var(--sm-color-action-primary-text);
+		font-size: var(--sm-fs-sm);
+		font-weight: var(--sm-weight-semibold);
+	}
+
+	.panel__scroll {
+		flex: 1;
+	}
+
+	.panel__list {
+		flex-direction: column;
+		padding-left: var(--sm-size-page-gutter);
+		padding-right: var(--sm-size-page-gutter);
+		padding-bottom: var(--sm-space-4);
+	}
+
+	.convo {
+		flex-direction: row;
+		align-items: center;
+		background-color: var(--sm-color-bg-surface);
+		border-radius: var(--sm-radius-lg);
+		padding-left: var(--sm-space-4);
+		padding-right: var(--sm-space-4);
+		padding-top: var(--sm-space-4);
+		padding-bottom: var(--sm-space-4);
+		margin-bottom: var(--sm-space-3);
+		box-shadow: var(--sm-shadow-sm);
+	}
+
+	.convo--pressed {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.convo__avatar {
+		position: relative;
+		margin-right: var(--sm-space-3);
+	}
+
+	.convo__dot {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: var(--sm-space-2);
+		height: var(--sm-space-2);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-danger-500);
+	}
+
+	.convo__body {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.convo__line {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.convo__name {
+		font-size: var(--sm-fs-lg);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.convo__time {
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.convo__preview {
+		flex: 1;
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-muted);
+		margin-top: var(--sm-space-1);
+	}
+
+	.convo__preview--unread {
+		color: var(--sm-color-text-secondary);
+		font-weight: var(--sm-weight-medium);
+	}
+
+	.convo__marks {
+		flex-direction: row;
+		align-items: center;
+		margin-left: var(--sm-space-2);
+	}
+
+	.picker {
+		max-height: 60%;
+	}
+
+	.picker__row {
+		flex-direction: row;
+		align-items: center;
+		padding-top: var(--sm-space-3);
+		padding-bottom: var(--sm-space-3);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		border-radius: var(--sm-radius-md);
+	}
+
+	.picker__row--pressed {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.picker__body {
+		flex: 1;
+		flex-direction: column;
+		margin-left: var(--sm-space-3);
+	}
+
+	.picker__name {
+		font-size: var(--sm-fs-md);
+		font-weight: var(--sm-weight-semibold);
+		color: var(--sm-color-text-primary);
+	}
+
+	.picker__desc {
+		margin-top: var(--sm-space-1);
+		font-size: var(--sm-fs-xs);
+		color: var(--sm-color-text-muted);
+	}
+
+	.picker__foot {
+		margin-top: var(--sm-space-4);
+	}
+
+	.actions {
+		flex-direction: column;
+		margin-top: var(--sm-space-4);
+	}
+
+	.actions__row {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-2);
+		padding-right: var(--sm-space-2);
+		border-radius: var(--sm-radius-md);
+	}
+
+	.actions__text {
+		margin-left: var(--sm-space-3);
+		font-size: var(--sm-fs-md);
+		color: var(--sm-color-text-primary);
+	}
+
+	.actions__text--danger {
+		color: var(--sm-color-action-danger);
+	}
+</style>

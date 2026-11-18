@@ -1,0 +1,108 @@
+<template>
+	<view class="sm-chip" :class="[toneClass, activeClass]" :hover-class="'sm-chip--pressed'" @click="onTap">
+		<text class="sm-chip__text" :class="[textToneClass, textActiveClass]">{{ label }}</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+
+	const props = withDefaults(defineProps<{
+		label?: string
+		tone?: string
+		active?: boolean
+	}>(), {
+		label: '',
+		tone: 'soft',
+		active: false
+	})
+
+	const emit = defineEmits(['tap'])
+
+	const toneClass = computed((): string => {
+		if (props.tone == 'outline') return 'sm-chip--outline'
+		if (props.tone == 'deep') return 'sm-chip--deep'
+		if (props.tone == 'plain') return 'sm-chip--plain'
+		return 'sm-chip--soft'
+	})
+
+	const activeClass = computed((): string => (props.active ? 'sm-chip--active' : ''))
+
+	const textToneClass = computed((): string => {
+		if (props.tone == 'deep') return 'sm-chip__text--deep'
+		if (props.tone == 'outline') return 'sm-chip__text--outline'
+		if (props.tone == 'plain') return 'sm-chip__text--plain'
+		return 'sm-chip__text--soft'
+	})
+
+	const textActiveClass = computed((): string => (props.active ? 'sm-chip__text--active' : ''))
+
+	const onTap = (): void => {
+		emit('tap')
+	}
+</script>
+
+<style>
+	.sm-chip {
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		height: var(--sm-size-control-sm);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		border-radius: var(--sm-radius-full);
+	}
+
+	.sm-chip--soft {
+		background-color: var(--sm-color-brand-100);
+	}
+
+	.sm-chip--outline {
+		background-color: transparent;
+		border-width: var(--sm-border-hairline);
+		border-style: solid;
+		border-color: var(--sm-color-border-strong);
+	}
+
+	.sm-chip--deep {
+		background-color: var(--sm-color-neutral-800);
+	}
+
+	.sm-chip--plain {
+		background-color: var(--sm-color-bg-sunken);
+	}
+
+	.sm-chip--active {
+		background-color: var(--sm-color-action-primary);
+	}
+
+	.sm-chip--pressed {
+		opacity: 0.8;
+	}
+
+	.sm-chip__text {
+		font-size: var(--sm-fs-xs);
+		font-weight: var(--sm-weight-medium);
+	}
+
+	.sm-chip__text--soft {
+		color: var(--sm-color-brand-800);
+	}
+
+	.sm-chip__text--outline {
+		color: var(--sm-color-text-secondary);
+	}
+
+	.sm-chip__text--deep {
+		color: var(--sm-palette-on-deep-muted);
+	}
+
+	.sm-chip__text--plain {
+		color: var(--sm-color-text-secondary);
+	}
+
+	.sm-chip__text--active {
+		color: var(--sm-color-action-primary-text);
+		font-weight: var(--sm-weight-semibold);
+	}
+</style>

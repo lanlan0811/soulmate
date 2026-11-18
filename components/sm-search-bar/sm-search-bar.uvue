@@ -1,0 +1,65 @@
+<template>
+	<view class="sm-search">
+		<sm-icon name="search" variant="muted" size="md"></sm-icon>
+		<input class="sm-search__input" :value="modelValue" :placeholder="placeholder" placeholder-class="sm-search__placeholder" confirm-type="search" @input="onInput" @confirm="onConfirm" />
+		<view v-if="modelValue.length > 0" class="sm-search__clear" @click="onClear">
+			<sm-icon name="x" variant="muted" size="sm"></sm-icon>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+	withDefaults(defineProps<{
+		modelValue?: string
+		placeholder?: string
+	}>(), {
+		modelValue: '',
+		placeholder: '搜索'
+	})
+
+	const emit = defineEmits(['update:modelValue', 'confirm'])
+
+	const onInput = (event: UniInputEvent): void => {
+		emit('update:modelValue', event.detail.value)
+	}
+
+	const onConfirm = (event: UniInputEvent): void => {
+		emit('confirm', event.detail.value)
+	}
+
+	const onClear = (): void => {
+		emit('update:modelValue', '')
+	}
+</script>
+
+<style>
+	.sm-search {
+		flex-direction: row;
+		align-items: center;
+		height: var(--sm-size-control-lg);
+		padding-left: var(--sm-space-3);
+		padding-right: var(--sm-space-3);
+		border-radius: var(--sm-radius-full);
+		background-color: var(--sm-color-bg-surface);
+	}
+
+	.sm-search__input {
+		flex: 1;
+		margin-left: var(--sm-space-2);
+		font-size: var(--sm-fs-sm);
+		color: var(--sm-color-text-primary);
+		height: var(--sm-size-control-lg);
+	}
+
+	.sm-search__placeholder {
+		color: var(--sm-color-text-muted);
+		font-size: var(--sm-fs-sm);
+	}
+
+	.sm-search__clear {
+		width: var(--sm-size-control-sm);
+		height: var(--sm-size-control-sm);
+		align-items: center;
+		justify-content: center;
+	}
+</style>
